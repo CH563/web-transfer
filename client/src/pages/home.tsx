@@ -255,10 +255,10 @@ export default function Home() {
           <div className="text-center space-y-6">
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-foreground">
-                安全的点对点文件传输
+                Secure Peer-to-Peer File Transfer
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                基于WebRTC技术的端到端加密文件共享，无需云端存储，保护您的隐私安全
+                End-to-end encrypted file sharing based on WebRTC technology, no cloud storage required, protecting your privacy and security
               </p>
             </div>
 
@@ -269,9 +269,9 @@ export default function Home() {
                     <div className="w-3 h-3 bg-white rounded-full"></div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">端到端加密</h3>
+                <h3 className="text-lg font-semibold text-foreground">End-to-End Encryption</h3>
                 <p className="text-sm text-muted-foreground">
-                  所有文件传输都经过WebRTC端到端加密，确保数据在传输过程中的绝对安全
+                  All file transfers are encrypted end-to-end via WebRTC, ensuring absolute security during data transmission
                 </p>
               </div>
 
@@ -281,9 +281,9 @@ export default function Home() {
                     <div className="absolute inset-1 bg-blue-600 rounded-full"></div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">无服务器存储</h3>
+                <h3 className="text-lg font-semibold text-foreground">No Server Storage</h3>
                 <p className="text-sm text-muted-foreground">
-                  文件直接在设备间传输，不经过任何服务器存储，完全保护您的隐私
+                  Files are transferred directly between devices without any server storage, completely protecting your privacy
                 </p>
               </div>
 
@@ -294,9 +294,9 @@ export default function Home() {
                     <div className="absolute inset-2 border-2 border-purple-600 rounded-full"></div>
                   </div>
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">实时传输</h3>
+                <h3 className="text-lg font-semibold text-foreground">Real-time Transfer</h3>
                 <p className="text-sm text-muted-foreground">
-                  基于WebRTC技术的P2P连接，提供最快的文件传输速度和实时进度反馈
+                  P2P connections based on WebRTC technology provide the fastest file transfer speeds and real-time progress feedback
                 </p>
               </div>
             </div>
@@ -304,14 +304,14 @@ export default function Home() {
             <div className="mt-8 pt-8 border-t border-border">
               <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                 <p className="text-sm text-muted-foreground">
-                  支持所有现代浏览器 | 无需安装任何软件 | 完全开源免费
+                  Compatible with all modern browsers | No software installation required | Completely open source and free
                 </p>
                 <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                   <span>WebRTC</span>
                   <span>•</span>
                   <span>P2P</span>
                   <span>•</span>
-                  <span>端到端加密</span>
+                  <span>End-to-End Encrypted</span>
                 </div>
               </div>
             </div>
