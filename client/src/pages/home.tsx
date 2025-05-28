@@ -248,6 +248,76 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Footer with Security & Privacy Info */}
+      <footer className="bg-card border-t border-border mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">
+                安全的点对点文件传输
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                基于WebRTC技术的端到端加密文件共享，无需云端存储，保护您的隐私安全
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto">
+                  <div className="w-6 h-6 bg-green-600 rounded-full flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">端到端加密</h3>
+                <p className="text-sm text-muted-foreground">
+                  所有文件传输都经过WebRTC端到端加密，确保数据在传输过程中的绝对安全
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto">
+                  <div className="w-6 h-6 border-2 border-blue-600 rounded-full relative">
+                    <div className="absolute inset-1 bg-blue-600 rounded-full"></div>
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">无服务器存储</h3>
+                <p className="text-sm text-muted-foreground">
+                  文件直接在设备间传输，不经过任何服务器存储，完全保护您的隐私
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mx-auto">
+                  <div className="w-6 h-6 relative">
+                    <div className="absolute inset-0 border-2 border-purple-600 rounded-full"></div>
+                    <div className="absolute inset-2 border-2 border-purple-600 rounded-full"></div>
+                  </div>
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">实时传输</h3>
+                <p className="text-sm text-muted-foreground">
+                  基于WebRTC技术的P2P连接，提供最快的文件传输速度和实时进度反馈
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                <p className="text-sm text-muted-foreground">
+                  支持所有现代浏览器 | 无需安装任何软件 | 完全开源免费
+                </p>
+                <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                  <span>WebRTC</span>
+                  <span>•</span>
+                  <span>P2P</span>
+                  <span>•</span>
+                  <span>端到端加密</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

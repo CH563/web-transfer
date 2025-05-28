@@ -43,6 +43,7 @@ export class MemStorage implements IStorage {
     const device: Device = {
       ...insertDevice,
       id,
+      status: insertDevice.status || 'available',
       lastSeen: new Date(),
     };
     this.devices.set(device.deviceId, device);
@@ -90,6 +91,8 @@ export class MemStorage implements IStorage {
     const transfer: Transfer = {
       ...insertTransfer,
       id,
+      status: insertTransfer.status || 'pending',
+      progress: insertTransfer.progress || 0,
       createdAt: new Date(),
       completedAt: null,
     };
