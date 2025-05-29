@@ -84,3 +84,19 @@
     transform: translateY(0); 
   }
 }
+
+@keyframes slide-right {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-slide-right {
+  animation: slide-right 2s infinite;
+}

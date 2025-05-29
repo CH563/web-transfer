@@ -72,11 +72,28 @@ export default function TransferItem({ transfer, currentDeviceId, availableDevic
         <div className="flex items-center space-x-2">
           {!isCompleted && !isFailed && (
             <>
-              <Progress 
-                value={transfer.progress} 
-                className="flex-1 h-2"
-              />
-              <span className="text-xs text-muted-foreground">
+              <div className="flex-1 relative">
+                <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ease-out ${
+                      transfer.status === 'transferring' && transfer.progress > 0
+                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 animate-pulse'
+                        : 'bg-primary'
+                    }`}
+                    style={{ width: `${transfer.progress}%` }}
+                  />
+                  {transfer.status === 'transferring' && transfer.progress > 0 && (
+                    <div 
+                      className="absolute top-0 h-2 w-8 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-slide-right"
+                      style={{ 
+                        left: `${Math.max(0, transfer.progress - 20)}%`,
+                        animation: 'slide-right 2s infinite'
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">
                 {transfer.progress}%
               </span>
             </>
