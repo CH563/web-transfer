@@ -28,6 +28,7 @@ interface TransferState {
 export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebRTCProps) {
   const [transfers, setTransfers] = useState<Record<string, TransferState>>({});
   const transfersRef = useRef<Record<string, TransferState>>({});
+  const fallbackTriggered = useRef<Set<string>>(new Set());
 
   // Keep refs in sync
   useEffect(() => {
@@ -97,9 +98,16 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
   }, [deviceId, updateTransfer]);
 
   const fallbackToServerTransfer = useCallback(async (transfer: TransferState) => {
-    if (!transfer.file || transfer.status === 'transferring' || transfer.status === 'completed') {
-      return; // Prevent duplicate fallback attempts
+    // Prevent duplicate fallback attempts
+    if (!transfer.file || 
+        transfer.status === 'transferring' || 
+        transfer.status === 'completed' ||
+        fallbackTriggered.current.has(transfer.transferId)) {
+      return;
     }
+    
+    // Mark this transfer as having fallback triggered
+    fallbackTriggered.current.add(transfer.transferId);
     
     console.log(`Using server fallback for ${transfer.transferId}`);
     updateTransfer(transfer.transferId, { status: 'transferring', progress: 0 });
@@ -121,12 +129,15 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
           transferId: transfer.transferId
         });
         onTransferComplete(transfer.transferId);
+        // Clean up fallback tracking
+        fallbackTriggered.current.delete(transfer.transferId);
       } else {
         throw new Error('Server upload failed');
       }
     } catch (error) {
       console.error('Fallback transfer failed:', error);
       updateTransfer(transfer.transferId, { status: 'failed' });
+      fallbackTriggered.current.delete(transfer.transferId);
     }
   }, [updateTransfer, sendMessage, onTransferComplete]);
 

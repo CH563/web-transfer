@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Share, Laptop, Cog } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -95,13 +95,28 @@ export default function Home() {
     return 'laptop';
   };
 
+  const transferLock = useRef(false);
+  
   const handleFileDrop = async (files: File[], targetDevice: Device) => {
-    for (const file of files) {
-      try {
+    if (transferLock.current) {
+      console.log('Transfer already in progress, ignoring duplicate request');
+      return;
+    }
+    
+    transferLock.current = true;
+    
+    try {
+      for (const file of files) {
+        console.log(`Sending file: ${file.name} to device: ${targetDevice.name}`);
         await sendFile(file, targetDevice.deviceId);
-      } catch (error) {
-        console.error('Failed to send file:', error);
       }
+    } catch (error) {
+      console.error('Failed to send file:', error);
+    } finally {
+      // Release lock after a short delay to prevent rapid duplicate triggers
+      setTimeout(() => {
+        transferLock.current = false;
+      }, 1000);
     }
   };
 
