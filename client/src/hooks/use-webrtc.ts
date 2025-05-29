@@ -203,7 +203,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
     updateTransfer(transferId, transfer);
 
-    // Send transfer offer for WebRTC negotiation
+    // Send transfer offer and wait for user acceptance
     sendMessage({
       type: 'transfer-offer',
       transferId,
@@ -214,8 +214,10 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       receiverId
     });
 
-    // Try WebRTC connection
-    await initiateWebRTCConnection(transfer);
+    console.log(`Transfer offer sent for ${file.name}, waiting for user response`);
+    
+    // Don't start WebRTC connection yet - wait for transfer-answer message
+    // The connection will be initiated when we receive the acceptance
 
     return transferId;
   }, [deviceId, sendMessage, updateTransfer]);
