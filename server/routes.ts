@@ -64,6 +64,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
+          // Close any existing connection for this device
+          const existingConnection = connectedClients.get(message.device.deviceId);
+          if (existingConnection && existingConnection !== ws) {
+            console.log(`Closing existing connection for device ${message.device.deviceId}`);
+            existingConnection.close();
+          }
+          
           ws.deviceId = message.device.deviceId;
           connectedClients.set(message.device.deviceId, ws);
 
@@ -245,6 +252,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Track processed uploads to prevent duplicates
   const processedUploads = new Set<string>();
+  
+  // Track notified transfers to prevent duplicate notifications
+  const notifiedTransfers = new Set<string>();
 
   // Fallback file upload endpoint
   app.post('/api/transfer/:transferId/upload', (req, res) => {
@@ -296,27 +306,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update transfer status
         await storage.updateTransfer(transferId, { status: 'completed', progress: 100 });
         
-        // Notify receiver only once
-        const transfer = await storage.getTransfer(transferId);
-        if (transfer) {
-          // Broadcast to all connected clients of the receiver
-          const message = JSON.stringify({
-            type: 'transfer-complete',
-            transferId
-          });
+        // Notify receiver only once - prevent duplicate notifications
+        if (!notifiedTransfers.has(transferId)) {
+          notifiedTransfers.add(transferId);
           
-          let notified = false;
-          connectedClients.forEach((ws, deviceId) => {
-            if (deviceId === transfer.receiverId && ws.readyState === WebSocket.OPEN) {
-              ws.send(message);
-              notified = true;
-              console.log(`Notified receiver ${deviceId} about completed transfer ${transferId}`);
+          const transfer = await storage.getTransfer(transferId);
+          if (transfer) {
+            // Send notification to only one active connection of the receiver
+            const message = JSON.stringify({
+              type: 'transfer-complete',
+              transferId
+            });
+            
+            let notified = false;
+            // Find the first active connection for the receiver
+            const connections = Array.from(connectedClients.entries());
+            for (const [deviceId, ws] of connections) {
+              if (deviceId === transfer.receiverId && ws.readyState === WebSocket.OPEN && !notified) {
+                ws.send(message);
+                notified = true;
+                console.log(`Notified receiver ${deviceId} about completed transfer ${transferId}`);
+                break; // Only notify once
+              }
             }
-          });
-          
-          if (!notified) {
-            console.log(`No active connection found for receiver ${transfer.receiverId}`);
+            
+            if (!notified) {
+              console.log(`No active connection found for receiver ${transfer.receiverId}`);
+            }
           }
+          
+          // Clean up notification tracking after delay
+          setTimeout(() => {
+            notifiedTransfers.delete(transferId);
+          }, 30000);
+        } else {
+          console.log(`Transfer ${transferId} already notified, skipping`);
         }
         
         // Clean up processed uploads after delay to allow retries if needed
