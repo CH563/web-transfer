@@ -118,7 +118,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       const response = await fetch(`/api/transfer/${transfer.transferId}/upload`, {
         method: 'POST',
         headers: {
-          'X-Filename': transfer.fileName,
+          'X-Filename': encodeURIComponent(transfer.fileName),
           'Content-Type': transfer.fileType,
           'X-Transfer-Id': transfer.transferId
         },

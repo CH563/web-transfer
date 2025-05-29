@@ -266,9 +266,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     req.on('end', async () => {
       try {
         const fileBuffer = Buffer.concat(chunks);
-        const fileName = req.headers['x-filename'] as string || 'unknown';
+        const fileName = decodeURIComponent(req.headers['x-filename'] as string || 'unknown');
         const fileType = req.headers['content-type'] || 'application/octet-stream';
-        const relativePath = req.headers['x-relative-path'] as string || fileName;
+        const relativePath = req.headers['x-relative-path'] as string ? decodeURIComponent(req.headers['x-relative-path'] as string) : fileName;
         
         // Mark as processed to prevent duplicates
         processedUploads.add(transferId);
