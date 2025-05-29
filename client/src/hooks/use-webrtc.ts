@@ -167,7 +167,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
     updateTransfer(transferId, transfer);
 
-    // Send transfer offer
+    // Send transfer offer for WebRTC negotiation
     sendMessage({
       type: 'transfer-offer',
       transferId,
@@ -177,6 +177,9 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       senderId: deviceId,
       receiverId
     });
+
+    // Try WebRTC connection
+    await initiateWebRTCConnection(transfer);
 
     return transferId;
   }, [deviceId, sendMessage, updateTransfer]);
