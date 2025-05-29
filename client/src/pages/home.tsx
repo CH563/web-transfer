@@ -120,6 +120,19 @@ export default function Home() {
 
   const handleAcceptTransfer = () => {
     if (incomingTransfer) {
+      // Create a transfer record for the receiver before accepting
+      const receiverTransfer = {
+        transferId: incomingTransfer.transferId,
+        fileName: incomingTransfer.fileName,
+        fileSize: incomingTransfer.fileSize,
+        fileType: incomingTransfer.fileType,
+        senderId: incomingTransfer.senderId,
+        receiverId: deviceId,
+        status: 'accepted',
+        progress: 0
+      };
+      
+      setActiveTransfers(prev => [...prev, receiverTransfer as any]);
       acceptTransfer(incomingTransfer.transferId);
       setIncomingTransfer(null);
     }

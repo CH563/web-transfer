@@ -47,7 +47,29 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
   const handleWebRTCMessage = useCallback(async (event: CustomEvent) => {
     const message = event.detail;
-    const transfer = transfersRef.current[message.transferId];
+    let transfer = transfersRef.current[message.transferId];
+    
+    // For webrtc-offer, we need to create the transfer record if it doesn't exist (receiver side)
+    if (!transfer && message.type === 'webrtc-offer') {
+      // This must be from a transfer-offer that was accepted
+      // We need to create a minimal transfer record for the receiver
+      const receiverTransfer: TransferState = {
+        transferId: message.transferId,
+        fileName: 'Incoming file', // Will be updated when metadata arrives
+        fileSize: 0, // Will be updated when metadata arrives
+        fileType: 'application/octet-stream', // Will be updated when metadata arrives
+        senderId: '', // Will be determined from WebRTC
+        receiverId: deviceId,
+        status: 'connecting',
+        progress: 0,
+        chunks: [],
+        receivedChunks: 0,
+        totalChunks: 0
+      };
+      
+      updateTransfer(message.transferId, receiverTransfer);
+      transfer = receiverTransfer;
+    }
     
     if (!transfer) return;
 
@@ -72,12 +94,13 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
         await handleICECandidate(transfer, message.candidate);
         break;
     }
-  }, []);
+  }, [deviceId, updateTransfer]);
 
   useEffect(() => {
-    window.addEventListener('webrtc-message', handleWebRTCMessage as EventListener);
+    const eventHandler = (event: Event) => handleWebRTCMessage(event as CustomEvent);
+    window.addEventListener('webrtc-message', eventHandler);
     return () => {
-      window.removeEventListener('webrtc-message', handleWebRTCMessage as EventListener);
+      window.removeEventListener('webrtc-message', eventHandler);
     };
   }, [handleWebRTCMessage]);
 
@@ -354,23 +377,37 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
         // Check if all chunks received
         if (receivedChunks === transfer.totalChunks) {
-          const file = await reassembleFile(chunks, transfer.fileName, transfer.fileType);
-          
-          // Trigger download
-          const url = URL.createObjectURL(file);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = transfer.fileName;
-          a.click();
-          URL.revokeObjectURL(url);
+          try {
+            console.log(`File transfer complete: ${transfer.fileName}`);
+            const file = await reassembleFile(chunks, transfer.fileName, transfer.fileType);
+            
+            // Force download to user's computer
+            const url = URL.createObjectURL(file);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = transfer.fileName;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Clean up object URL after a short delay to ensure download starts
+            setTimeout(() => {
+              URL.revokeObjectURL(url);
+            }, 1000);
 
-          updateTransfer(transferId, { status: 'completed', progress: 100 });
-          sendMessage({
-            type: 'transfer-complete',
-            transferId
-          });
-          
-          onTransferComplete(transferId);
+            updateTransfer(transferId, { status: 'completed', progress: 100 });
+            sendMessage({
+              type: 'transfer-complete',
+              transferId
+            });
+            
+            console.log(`Download triggered for: ${transfer.fileName}`);
+            onTransferComplete(transferId);
+          } catch (error) {
+            console.error('Failed to download file:', error);
+            updateTransfer(transferId, { status: 'failed' });
+          }
         }
       }
     } catch (error) {
