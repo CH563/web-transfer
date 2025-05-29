@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { CloudUpload, Plus } from "lucide-react";
+import { CloudUpload, Plus, Folder } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +14,7 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -27,12 +28,61 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
     setIsDragOver(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  // Function to recursively process folder entries
+  const processEntry = (entry: FileSystemEntry): Promise<File[]> => {
+    return new Promise((resolve) => {
+      if (entry.isFile) {
+        (entry as FileSystemFileEntry).file((file) => {
+          // Preserve folder structure by setting webkitRelativePath
+          Object.defineProperty(file, 'webkitRelativePath', {
+            value: entry.fullPath.substring(1), // Remove leading slash
+            writable: false
+          });
+          resolve([file]);
+        });
+      } else if (entry.isDirectory) {
+        const dirReader = (entry as FileSystemDirectoryEntry).createReader();
+        const allFiles: File[] = [];
+        
+        const readEntries = () => {
+          dirReader.readEntries(async (entries) => {
+            if (entries.length === 0) {
+              resolve(allFiles);
+            } else {
+              for (const childEntry of entries) {
+                const childFiles = await processEntry(childEntry);
+                allFiles.push(...childFiles);
+              }
+              readEntries(); // Continue reading if there are more entries
+            }
+          });
+        };
+        readEntries();
+      } else {
+        resolve([]);
+      }
+    });
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
 
-    const files = Array.from(e.dataTransfer.files);
+    const items = Array.from(e.dataTransfer.items);
+    const files: File[] = [];
+
+    // Handle both files and folders
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry();
+        if (entry) {
+          const entryFiles = await processEntry(entry);
+          files.push(...entryFiles);
+        }
+      }
+    }
+
     if (files.length > 0 && selectedDevice) {
       const device = availableDevices.find(d => d.deviceId === selectedDevice);
       if (device) {
@@ -44,6 +94,12 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
   const handleFileSelect = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  const handleFolderSelect = () => {
+    if (folderInputRef.current) {
+      folderInputRef.current.click();
     }
   };
 
@@ -77,8 +133,8 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
         </div>
         
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Drop files here to share</h3>
-          <p className="text-muted-foreground">or click to select files from your device</p>
+          <h3 className="text-lg font-semibold text-foreground">Drop files or folders here to share</h3>
+          <p className="text-muted-foreground">or click to select files/folders from your device</p>
         </div>
 
         {availableDevices.length > 0 && (
@@ -98,22 +154,46 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
           </div>
         )}
 
-        <Button 
-          className="inline-flex items-center"
-          disabled={!selectedDevice}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleFileSelect();
-          }}
-        >
-          <Plus className="mr-2" size={16} />
-          Select Files
-        </Button>
+        <div className="flex gap-2 justify-center">
+          <Button 
+            className="inline-flex items-center"
+            disabled={!selectedDevice}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFileSelect();
+            }}
+          >
+            <Plus className="mr-2" size={16} />
+            Select Files
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="inline-flex items-center"
+            disabled={!selectedDevice}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFolderSelect();
+            }}
+          >
+            <Folder className="mr-2" size={16} />
+            Select Folder
+          </Button>
+        </div>
       </div>
 
       <input
         ref={fileInputRef}
         type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+      
+      <input
+        ref={folderInputRef}
+        type="file"
+        webkitdirectory=""
         multiple
         className="hidden"
         onChange={handleFileInputChange}
