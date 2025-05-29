@@ -50,6 +50,35 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
     const message = event.detail;
     let transfer = transfersRef.current[message.transferId];
     
+    // For transfer-complete, handle auto-download for receiving devices
+    if (message.type === 'transfer-complete') {
+      console.log(`Received transfer complete notification for ${message.transferId}`);
+      
+      // Only auto-download if this device is the receiver and we don't have a sender-side transfer
+      const existingTransfer = await fetch(`/api/transfers/${deviceId}`)
+        .then(res => res.json())
+        .then(data => {
+          const allTransfers = [...data.active, ...data.history];
+          return allTransfers.find((t: any) => t.transferId === message.transferId);
+        })
+        .catch(() => null);
+        
+      if (existingTransfer && existingTransfer.receiverId === deviceId && existingTransfer.status === 'completed') {
+        setTimeout(() => {
+          const downloadUrl = `/api/transfer/${message.transferId}/download`;
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = existingTransfer.fileName;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          console.log(`Auto-downloading completed transfer: ${existingTransfer.fileName}`);
+        }, 500);
+      }
+      return;
+    }
+    
     // For webrtc-offer, we need to create the transfer record if it doesn't exist (receiver side)
     if (!transfer && message.type === 'webrtc-offer') {
       // This must be from a transfer-offer that was accepted

@@ -120,22 +120,9 @@ export function useWebSocket({
         break;
         
       case 'transfer-complete':
-        // Handle transfer completion
+        // Handle transfer completion - only dispatch to WebRTC handler, don't auto-download here
+        // The download will be handled by the WebRTC hook to prevent duplicates
         window.dispatchEvent(new CustomEvent('webrtc-message', { detail: message }));
-        
-        // Auto-download completed file
-        if (message.transferId) {
-          setTimeout(() => {
-            const downloadUrl = `/api/transfer/${message.transferId}/download`;
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            console.log(`Auto-downloading completed transfer: ${message.transferId}`);
-          }, 1000);
-        }
         break;
       
       default:
