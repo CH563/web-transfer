@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { Device, WSMessage } from "@shared/schema";
 
+// Global WebSocket instance to prevent multiple connections
+let globalWsClient: WebSocket | null = null;
+let globalConnectionState: 'connecting' | 'connected' | 'disconnected' = 'disconnected';
+let isConnecting = false;
+
 interface UseWebSocketProps {
   onDeviceList: (devices: Device[]) => void;
   onTransferOffer: (offer: any) => void;
@@ -22,19 +27,32 @@ export function useWebSocket({
   const messageQueue = useRef<WSMessage[]>([]);
 
   const connect = useCallback(() => {
-    if (wsClient?.readyState === WebSocket.OPEN) {
+    // Check for existing global connection first
+    if (globalWsClient?.readyState === WebSocket.OPEN) {
+      setWsClient(globalWsClient);
+      setIsConnected(true);
+      onConnectionStatusChange('connected');
       return;
     }
 
+    if (isConnecting || globalWsClient?.readyState === WebSocket.CONNECTING) {
+      return;
+    }
+
+    isConnecting = true;
+    globalConnectionState = 'connecting';
     onConnectionStatusChange('connecting');
     
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
     const ws = new WebSocket(wsUrl);
+    globalWsClient = ws;
 
     ws.onopen = () => {
       console.log('WebSocket connected');
+      isConnecting = false;
+      globalConnectionState = 'connected';
       setIsConnected(true);
       setWsClient(ws);
       onConnectionStatusChange('connected');
