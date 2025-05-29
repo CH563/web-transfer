@@ -202,6 +202,13 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
   const initiateWebRTCConnection = useCallback(async (transfer: TransferState) => {
     try {
+      // Prevent duplicate connection attempts
+      const existingTransfer = transfersRef.current[transfer.transferId];
+      if (existingTransfer && existingTransfer.peerConnection) {
+        console.log(`WebRTC connection already exists for ${transfer.transferId}`);
+        return;
+      }
+      
       console.log(`Initiating WebRTC connection for ${transfer.transferId}`);
       const peerConnection = createPeerConnection();
       
