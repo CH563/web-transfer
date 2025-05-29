@@ -29,6 +29,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
   const [transfers, setTransfers] = useState<Record<string, TransferState>>({});
   const transfersRef = useRef<Record<string, TransferState>>({});
   const fallbackTriggered = useRef<Set<string>>(new Set());
+  const downloadTriggered = useRef<Set<string>>(new Set());
 
   // Keep refs in sync
   useEffect(() => {
@@ -54,7 +55,16 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
     if (message.type === 'transfer-complete') {
       console.log(`Received transfer complete notification for ${message.transferId}`);
       
-      // Only auto-download if this device is the receiver and we don't have a sender-side transfer
+      // Prevent duplicate downloads
+      if (downloadTriggered.current.has(message.transferId)) {
+        console.log(`Download already triggered for ${message.transferId}, skipping`);
+        return;
+      }
+      
+      // Mark download as triggered
+      downloadTriggered.current.add(message.transferId);
+      
+      // Only auto-download if this device is the receiver
       const existingTransfer = await fetch(`/api/transfers/${deviceId}`)
         .then(res => res.json())
         .then(data => {
@@ -74,7 +84,15 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
           link.click();
           document.body.removeChild(link);
           console.log(`Auto-downloading completed transfer: ${existingTransfer.fileName}`);
+          
+          // Clean up download tracking after delay
+          setTimeout(() => {
+            downloadTriggered.current.delete(message.transferId);
+          }, 10000);
         }, 500);
+      } else {
+        // Remove from tracking if no download occurred
+        downloadTriggered.current.delete(message.transferId);
       }
       return;
     }
