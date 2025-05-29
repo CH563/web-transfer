@@ -191,18 +191,27 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       peerConnection.onconnectionstatechange = () => {
         console.log(`Connection state changed to: ${peerConnection.connectionState}`);
         if (peerConnection.connectionState === 'failed') {
-          console.log('Connection failed, will retry...');
-          updateTransfer(transfer.transferId, { status: 'failed' });
+          console.log('Connection failed - falling back to server relay');
+          fallbackToServerTransfer(transfer);
         }
       };
       
       peerConnection.oniceconnectionstatechange = () => {
         console.log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
-        if (peerConnection.iceConnectionState === 'failed') {
+        if (peerConnection.iceConnectionState === 'failed' || 
+            peerConnection.iceConnectionState === 'disconnected') {
           console.log('ICE connection failed - falling back to server relay');
           fallbackToServerTransfer(transfer);
         }
       };
+      
+      // Add timeout fallback - if WebRTC doesn't connect within 10 seconds, use server relay
+      setTimeout(() => {
+        if (transfer.status === 'connecting') {
+          console.log('WebRTC connection timeout - falling back to server relay');
+          fallbackToServerTransfer(transfer);
+        }
+      }, 10000);
       
       const dataChannel = peerConnection.createDataChannel('fileTransfer', {
         ordered: true,
@@ -309,11 +318,14 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
   const handleICECandidate = useCallback(async (transfer: TransferState, candidate: RTCIceCandidateInit) => {
     try {
-      if (transfer.peerConnection) {
+      if (transfer.peerConnection && 
+          transfer.peerConnection.connectionState !== 'failed' &&
+          transfer.peerConnection.connectionState !== 'closed') {
         await transfer.peerConnection.addIceCandidate(candidate);
       }
     } catch (error) {
       console.error('Failed to handle ICE candidate:', error);
+      // Don't retry on ICE candidate errors, just log and continue
     }
   }, []);
 
