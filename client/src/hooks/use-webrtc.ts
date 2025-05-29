@@ -96,6 +96,38 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
     }
   }, [deviceId, updateTransfer]);
 
+  const fallbackToServerTransfer = useCallback(async (transfer: TransferState) => {
+    if (!transfer.file) return;
+    
+    console.log(`Using server fallback for ${transfer.transferId}`);
+    updateTransfer(transfer.transferId, { status: 'transferring', progress: 0 });
+    
+    try {
+      const response = await fetch(`/api/transfer/${transfer.transferId}/upload`, {
+        method: 'POST',
+        headers: {
+          'X-Filename': transfer.fileName,
+          'Content-Type': transfer.fileType
+        },
+        body: transfer.file
+      });
+      
+      if (response.ok) {
+        updateTransfer(transfer.transferId, { status: 'completed', progress: 100 });
+        sendMessage({
+          type: 'transfer-complete',
+          transferId: transfer.transferId
+        });
+        onTransferComplete(transfer.transferId);
+      } else {
+        throw new Error('Server upload failed');
+      }
+    } catch (error) {
+      console.error('Fallback transfer failed:', error);
+      updateTransfer(transfer.transferId, { status: 'failed' });
+    }
+  }, [updateTransfer, sendMessage, onTransferComplete]);
+
   useEffect(() => {
     const eventHandler = (event: Event) => handleWebRTCMessage(event as CustomEvent);
     window.addEventListener('webrtc-message', eventHandler);
@@ -158,10 +190,18 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       
       peerConnection.onconnectionstatechange = () => {
         console.log(`Connection state changed to: ${peerConnection.connectionState}`);
+        if (peerConnection.connectionState === 'failed') {
+          console.log('Connection failed, will retry...');
+          updateTransfer(transfer.transferId, { status: 'failed' });
+        }
       };
       
       peerConnection.oniceconnectionstatechange = () => {
         console.log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+        if (peerConnection.iceConnectionState === 'failed') {
+          console.log('ICE connection failed - falling back to server relay');
+          fallbackToServerTransfer(transfer);
+        }
       };
       
       const dataChannel = peerConnection.createDataChannel('fileTransfer', {
@@ -447,6 +487,54 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       console.error('Failed to handle file chunk:', error);
     }
   }, [updateTransfer, sendMessage, onTransferComplete]);
+
+  const handleServerTransferComplete = useCallback(async (transferId: string) => {
+    console.log(`Downloading file via server for ${transferId}`);
+    
+    try {
+      const response = await fetch(`/api/transfer/${transferId}/download`);
+      if (!response.ok) {
+        throw new Error('Download failed');
+      }
+      
+      const blob = await response.blob();
+      const transfer = transfersRef.current[transferId];
+      const fileName = transfer?.fileName || 'download';
+      
+      // Trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      updateTransfer(transferId, { status: 'completed', progress: 100 });
+      onTransferComplete(transferId);
+    } catch (error) {
+      console.error('Server download failed:', error);
+      updateTransfer(transferId, { status: 'failed' });
+    }
+  }, [updateTransfer, onTransferComplete]);
+
+  // Listen for server transfer complete messages
+  useEffect(() => {
+    const handleServerComplete = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail.type === 'transfer-complete') {
+        const transfer = transfersRef.current[customEvent.detail.transferId];
+        if (transfer && transfer.receiverId === deviceId) {
+          handleServerTransferComplete(customEvent.detail.transferId);
+        }
+      }
+    };
+    
+    window.addEventListener('webrtc-message', handleServerComplete);
+    return () => window.removeEventListener('webrtc-message', handleServerComplete);
+  }, [deviceId, handleServerTransferComplete]);
 
   return {
     transfers,

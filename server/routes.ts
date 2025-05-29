@@ -217,6 +217,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
+  // File transfer storage for fallback
+  const fileTransfers = new Map<string, { file: Buffer; fileName: string; fileType: string; uploadedAt: Date }>();
+
   // REST API endpoints
   app.get('/api/devices', async (req, res) => {
     try {
@@ -236,6 +239,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ active, history });
     } catch (error) {
       res.status(500).json({ error: 'Failed to fetch transfers' });
+    }
+  });
+
+  // Fallback file upload endpoint
+  app.post('/api/transfer/:transferId/upload', (req, res) => {
+    const { transferId } = req.params;
+    const chunks: Buffer[] = [];
+    
+    req.on('data', (chunk) => {
+      chunks.push(chunk);
+    });
+    
+    req.on('end', async () => {
+      try {
+        const fileBuffer = Buffer.concat(chunks);
+        const fileName = req.headers['x-filename'] as string || 'unknown';
+        const fileType = req.headers['content-type'] || 'application/octet-stream';
+        
+        fileTransfers.set(transferId, {
+          file: fileBuffer,
+          fileName,
+          fileType,
+          uploadedAt: new Date()
+        });
+        
+        // Update transfer status
+        await storage.updateTransfer(transferId, { status: 'completed', progress: 100 });
+        
+        // Notify receiver
+        const transfer = await storage.getTransfer(transferId);
+        if (transfer) {
+          const receiverWs = connectedClients.get(transfer.receiverId);
+          if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
+            receiverWs.send(JSON.stringify({
+              type: 'transfer-complete',
+              transferId
+            }));
+          }
+        }
+        
+        res.json({ success: true });
+      } catch (error) {
+        console.error('Upload failed:', error);
+        res.status(500).json({ error: 'Upload failed' });
+      }
+    });
+  });
+
+  // Fallback file download endpoint
+  app.get('/api/transfer/:transferId/download', async (req, res) => {
+    try {
+      const { transferId } = req.params;
+      const fileData = fileTransfers.get(transferId);
+      
+      if (!fileData) {
+        return res.status(404).json({ error: 'File not found' });
+      }
+      
+      res.set({
+        'Content-Type': fileData.fileType,
+        'Content-Disposition': `attachment; filename="${fileData.fileName}"`,
+        'Content-Length': fileData.file.length.toString()
+      });
+      
+      res.send(fileData.file);
+      
+      // Clean up after download
+      setTimeout(() => {
+        fileTransfers.delete(transferId);
+      }, 60000); // Keep for 1 minute after download
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+      res.status(500).json({ error: 'Download failed' });
     }
   });
 
