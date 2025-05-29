@@ -287,12 +287,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Notify receiver only once
         const transfer = await storage.getTransfer(transferId);
         if (transfer) {
-          const receiverWs = connectedClients.get(transfer.receiverId);
-          if (receiverWs && receiverWs.readyState === WebSocket.OPEN) {
-            receiverWs.send(JSON.stringify({
-              type: 'transfer-complete',
-              transferId
-            }));
+          // Broadcast to all connected clients of the receiver
+          const message = JSON.stringify({
+            type: 'transfer-complete',
+            transferId
+          });
+          
+          let notified = false;
+          connectedClients.forEach((ws, deviceId) => {
+            if (deviceId === transfer.receiverId && ws.readyState === WebSocket.OPEN) {
+              ws.send(message);
+              notified = true;
+              console.log(`Notified receiver ${deviceId} about completed transfer ${transferId}`);
+            }
+          });
+          
+          if (!notified) {
+            console.log(`No active connection found for receiver ${transfer.receiverId}`);
           }
         }
         

@@ -90,6 +90,17 @@ export default function Home() {
     }
   }, [wsClient, connectionStatus, deviceId, deviceName]);
 
+  // Add polling to ensure transfer status updates are received
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (connectionStatus === 'connected') {
+        fetchTransfers();
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [connectionStatus]);
+
   const getDeviceType = (): string => {
     const userAgent = navigator.userAgent.toLowerCase();
     if (/iphone|android/.test(userAgent)) return 'mobile';
