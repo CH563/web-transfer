@@ -19,6 +19,7 @@ export function useWebSocket({
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const messageQueue = useRef<WSMessage[]>([]);
 
   const connect = useCallback(() => {
     if (wsClient?.readyState === WebSocket.OPEN) {
@@ -38,6 +39,14 @@ export function useWebSocket({
       setWsClient(ws);
       onConnectionStatusChange('connected');
       reconnectAttempts.current = 0;
+      
+      // Send queued messages
+      while (messageQueue.current.length > 0) {
+        const message = messageQueue.current.shift();
+        if (message && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(message));
+        }
+      }
     };
 
     ws.onmessage = (event) => {
@@ -102,9 +111,11 @@ export function useWebSocket({
     if (wsClient?.readyState === WebSocket.OPEN) {
       wsClient.send(JSON.stringify(message));
     } else {
-      console.warn('WebSocket not connected, message not sent:', message);
+      console.warn('WebSocket not connected, queuing message:', message.type);
+      messageQueue.current.push(message);
+      connect();
     }
-  }, [wsClient]);
+  }, [wsClient, connect]);
 
   useEffect(() => {
     connect();
