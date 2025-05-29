@@ -65,28 +65,6 @@ export default function Home() {
       const response = await fetch(`/api/transfers/${deviceId}`);
       if (response.ok) {
         const { active, history } = await response.json();
-        
-        // Check for newly completed transfers that should trigger downloads
-        const previousActiveIds = activeTransfers.map(t => t.transferId);
-        const newlyCompleted = active.filter((transfer: any) => 
-          transfer.status === 'completed' && 
-          transfer.receiverId === deviceId &&
-          !previousActiveIds.includes(transfer.transferId)
-        );
-        
-        // Auto-download newly completed transfers
-        newlyCompleted.forEach((transfer: any) => {
-          setTimeout(() => {
-            const downloadUrl = `/api/transfer/${transfer.transferId}/download`;
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = transfer.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }, 500);
-        });
-        
         setActiveTransfers(active);
         setTransferHistory(history);
       }
