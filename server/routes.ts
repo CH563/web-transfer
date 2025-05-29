@@ -243,9 +243,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Track processed uploads to prevent duplicates
+  const processedUploads = new Set<string>();
+
   // Fallback file upload endpoint
   app.post('/api/transfer/:transferId/upload', (req, res) => {
     const { transferId } = req.params;
+    
+    // Check if this transfer has already been processed
+    if (processedUploads.has(transferId)) {
+      console.log(`Transfer ${transferId} already processed, skipping`);
+      res.json({ success: true, message: 'Already processed' });
+      return;
+    }
+    
     const chunks: Buffer[] = [];
     
     req.on('data', (chunk) => {
@@ -259,6 +270,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fileType = req.headers['content-type'] || 'application/octet-stream';
         const relativePath = req.headers['x-relative-path'] as string || fileName;
         
+        // Mark as processed to prevent duplicates
+        processedUploads.add(transferId);
+        
         fileTransfers.set(transferId, {
           file: fileBuffer,
           fileName,
@@ -270,7 +284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update transfer status
         await storage.updateTransfer(transferId, { status: 'completed', progress: 100 });
         
-        // Notify receiver
+        // Notify receiver only once
         const transfer = await storage.getTransfer(transferId);
         if (transfer) {
           const receiverWs = connectedClients.get(transfer.receiverId);
@@ -282,9 +296,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
+        // Clean up processed uploads after delay to allow retries if needed
+        setTimeout(() => {
+          processedUploads.delete(transferId);
+        }, 30000); // 30 seconds
+        
         res.json({ success: true });
       } catch (error) {
         console.error('Upload failed:', error);
+        processedUploads.delete(transferId); // Remove on error to allow retry
         res.status(500).json({ error: 'Upload failed' });
       }
     });

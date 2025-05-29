@@ -102,7 +102,9 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
     if (!transfer.file || 
         transfer.status === 'transferring' || 
         transfer.status === 'completed' ||
+        transfer.status === 'failed' ||
         fallbackTriggered.current.has(transfer.transferId)) {
+      console.log(`Skipping fallback for ${transfer.transferId} - already processed or in progress`);
       return;
     }
     
@@ -117,20 +119,19 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
         method: 'POST',
         headers: {
           'X-Filename': transfer.fileName,
-          'Content-Type': transfer.fileType
+          'Content-Type': transfer.fileType,
+          'X-Transfer-Id': transfer.transferId
         },
         body: transfer.file
       });
       
       if (response.ok) {
         updateTransfer(transfer.transferId, { status: 'completed', progress: 100 });
-        sendMessage({
-          type: 'transfer-complete',
-          transferId: transfer.transferId
-        });
         onTransferComplete(transfer.transferId);
-        // Clean up fallback tracking
-        fallbackTriggered.current.delete(transfer.transferId);
+        // Clean up fallback tracking after a delay
+        setTimeout(() => {
+          fallbackTriggered.current.delete(transfer.transferId);
+        }, 5000);
       } else {
         throw new Error('Server upload failed');
       }
@@ -139,7 +140,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       updateTransfer(transfer.transferId, { status: 'failed' });
       fallbackTriggered.current.delete(transfer.transferId);
     }
-  }, [updateTransfer, sendMessage, onTransferComplete]);
+  }, [updateTransfer, onTransferComplete]);
 
   useEffect(() => {
     const eventHandler = (event: Event) => handleWebRTCMessage(event as CustomEvent);
