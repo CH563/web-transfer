@@ -195,9 +195,16 @@ export default function Home() {
     }
   };
 
-  const handleAcceptTransfer = () => {
+  const handleAcceptTransfer = async () => {
     if (incomingTransfer) {
-      // Create a transfer record for the receiver before accepting
+      // Send acceptance message to sender
+      sendMessage({
+        type: 'transfer-answer',
+        transferId: incomingTransfer.transferId,
+        accepted: true
+      });
+      
+      // Create a transfer record for the receiver
       const receiverTransfer = {
         transferId: incomingTransfer.transferId,
         fileName: incomingTransfer.fileName,
@@ -210,15 +217,48 @@ export default function Home() {
       };
       
       setActiveTransfers(prev => [...prev, receiverTransfer as any]);
-      acceptTransfer(incomingTransfer.transferId);
       setIncomingTransfer(null);
+      
+      // Schedule download check for when transfer completes
+      setTimeout(async () => {
+        try {
+          const response = await fetch(`/api/transfers/${deviceId}`);
+          const data = await response.json();
+          const allTransfers = [...data.active, ...data.history];
+          const completedTransfer = allTransfers.find((t: any) => 
+            t.transferId === incomingTransfer.transferId && t.status === 'completed'
+          );
+          
+          if (completedTransfer) {
+            // Download the file immediately
+            const downloadUrl = `/api/transfer/${incomingTransfer.transferId}/download`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = incomingTransfer.fileName;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            console.log(`Downloading accepted transfer: ${incomingTransfer.fileName}`);
+          }
+        } catch (error) {
+          console.error('Failed to check transfer status:', error);
+        }
+      }, 6000); // Check after 6 seconds to allow transfer to complete
     }
   };
 
   const handleRejectTransfer = () => {
     if (incomingTransfer) {
-      rejectTransfer(incomingTransfer.transferId);
+      // Send rejection message to sender
+      sendMessage({
+        type: 'transfer-answer',
+        transferId: incomingTransfer.transferId,
+        accepted: false
+      });
+      
       setIncomingTransfer(null);
+      console.log(`Rejected transfer: ${incomingTransfer.fileName}`);
     }
   };
 

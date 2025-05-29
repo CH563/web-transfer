@@ -126,6 +126,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: message.accepted ? 'accepted' : 'rejected'
         });
 
+        // Track accepted transfers for download authorization
+        if (message.accepted) {
+          acceptedTransfers.add(message.transferId);
+          console.log(`Transfer ${message.transferId} accepted by user`);
+        } else {
+          console.log(`Transfer ${message.transferId} rejected by user`);
+        }
+
         if (transfer) {
           // Forward to sender
           const senderWs = connectedClients.get(transfer.senderId);
@@ -255,6 +263,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Track notified transfers to prevent duplicate notifications
   const notifiedTransfers = new Set<string>();
+  
+  // Track accepted transfers to ensure downloads only happen after user consent
+  const acceptedTransfers = new Set<string>();
 
   // Fallback file upload endpoint
   app.post('/api/transfer/:transferId/upload', (req, res) => {
@@ -361,11 +372,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/transfer/:transferId/download', async (req, res) => {
     try {
       const { transferId } = req.params;
+      
+      // Check if transfer was explicitly accepted by user
+      if (!acceptedTransfers.has(transferId)) {
+        console.log(`Download denied for ${transferId} - transfer not accepted by user`);
+        return res.status(403).json({ error: 'Transfer not accepted by user' });
+      }
+      
       const fileData = fileTransfers.get(transferId);
       
       if (!fileData) {
         return res.status(404).json({ error: 'File not found' });
       }
+      
+      console.log(`Authorized download for accepted transfer ${transferId}: ${fileData.fileName}`);
       
       res.set({
         'Content-Type': fileData.fileType,
@@ -378,6 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clean up after download
       setTimeout(() => {
         fileTransfers.delete(transferId);
+        acceptedTransfers.delete(transferId);
       }, 60000); // Keep for 1 minute after download
       
     } catch (error) {

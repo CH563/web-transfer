@@ -64,36 +64,11 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       // Mark download as triggered
       downloadTriggered.current.add(message.transferId);
       
-      // Only auto-download if this device is the receiver
-      const existingTransfer = await fetch(`/api/transfers/${deviceId}`)
-        .then(res => res.json())
-        .then(data => {
-          const allTransfers = [...data.active, ...data.history];
-          return allTransfers.find((t: any) => t.transferId === message.transferId);
-        })
-        .catch(() => null);
-        
-      if (existingTransfer && existingTransfer.receiverId === deviceId && existingTransfer.status === 'completed') {
-        setTimeout(() => {
-          const downloadUrl = `/api/transfer/${message.transferId}/download`;
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = existingTransfer.fileName;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          console.log(`Auto-downloading completed transfer: ${existingTransfer.fileName}`);
-          
-          // Clean up download tracking after delay
-          setTimeout(() => {
-            downloadTriggered.current.delete(message.transferId);
-          }, 10000);
-        }, 500);
-      } else {
-        // Remove from tracking if no download occurred
-        downloadTriggered.current.delete(message.transferId);
-      }
+      // Just mark the transfer as completed, don't auto-download
+      console.log(`Transfer ${message.transferId} completed - waiting for user action`);
+      
+      // Clean up download tracking
+      downloadTriggered.current.delete(message.transferId);
       return;
     }
     
