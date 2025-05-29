@@ -115,19 +115,29 @@ export default function TransferItem({ transfer, currentDeviceId, availableDevic
           )}
         </div>
         
-        <p className="text-xs text-muted-foreground mt-1">
-          {isCompleted && (
-            <span className="text-green-600 dark:text-green-400 font-medium">Completed</span>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-xs text-muted-foreground">
+            {isCompleted && (
+              <span className="text-green-600 dark:text-green-400 font-medium">Completed</span>
+            )}
+            {isFailed && (
+              <span className="text-red-600 dark:text-red-400 font-medium">Failed</span>
+            )}
+            {!isCompleted && !isFailed && (
+              <span>{isSending ? 'Sending to' : 'Receiving from'}</span>
+            )}
+            {' '}
+            <span className="font-medium">{otherDeviceName}</span>
+          </p>
+          
+          {transfer.status === 'transferring' && !isCompleted && !isFailed && (
+            <div className="flex items-center space-x-1">
+              <div className="w-1 h-1 rounded-full bg-blue-500 animate-bounce" />
+              <div className="w-1 h-1 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.1s' }} />
+              <div className="w-1 h-1 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0.2s' }} />
+            </div>
           )}
-          {isFailed && (
-            <span className="text-red-600 dark:text-red-400 font-medium">Failed</span>
-          )}
-          {!isCompleted && !isFailed && (
-            <span>{isSending ? 'Sending to' : 'Receiving from'}</span>
-          )}
-          {' '}
-          <span className="font-medium">{otherDeviceName}</span>
-        </p>
+        </div>
       </div>
       
       {!isCompleted && !isFailed && (

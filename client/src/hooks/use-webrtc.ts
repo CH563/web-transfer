@@ -112,9 +112,11 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
     fallbackTriggered.current.add(transfer.transferId);
     
     console.log(`Using server fallback for ${transfer.transferId}`);
-    updateTransfer(transfer.transferId, { status: 'transferring', progress: 0 });
+    updateTransfer(transfer.transferId, { status: 'transferring', progress: 10 });
     
     try {
+      console.log(`Starting server upload for ${transfer.fileName} (${transfer.fileSize} bytes)`);
+      
       const response = await fetch(`/api/transfer/${transfer.transferId}/upload`, {
         method: 'POST',
         headers: {
@@ -125,7 +127,11 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
         body: transfer.file
       });
       
+      console.log(`Server upload response: ${response.status} ${response.statusText}`);
+      
       if (response.ok) {
+        const result = await response.json();
+        console.log(`Server upload successful:`, result);
         updateTransfer(transfer.transferId, { status: 'completed', progress: 100 });
         onTransferComplete(transfer.transferId);
         // Clean up fallback tracking after a delay
@@ -133,7 +139,9 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
           fallbackTriggered.current.delete(transfer.transferId);
         }, 5000);
       } else {
-        throw new Error('Server upload failed');
+        const errorText = await response.text();
+        console.error(`Server upload failed: ${response.status} - ${errorText}`);
+        throw new Error(`Server upload failed: ${response.status}`);
       }
     } catch (error) {
       console.error('Fallback transfer failed:', error);
