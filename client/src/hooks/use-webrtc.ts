@@ -153,7 +153,17 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
   const initiateWebRTCConnection = useCallback(async (transfer: TransferState) => {
     try {
+      console.log(`Initiating WebRTC connection for ${transfer.transferId}`);
       const peerConnection = createPeerConnection();
+      
+      peerConnection.onconnectionstatechange = () => {
+        console.log(`Connection state changed to: ${peerConnection.connectionState}`);
+      };
+      
+      peerConnection.oniceconnectionstatechange = () => {
+        console.log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+      };
+      
       const dataChannel = peerConnection.createDataChannel('fileTransfer', {
         ordered: true,
         maxPacketLifeTime: 3000
@@ -169,6 +179,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
+          console.log(`Sending ICE candidate for ${transfer.transferId}`);
           sendMessage({
             type: 'webrtc-ice-candidate',
             transferId: transfer.transferId,
@@ -179,6 +190,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
+      console.log(`Sending WebRTC offer for ${transfer.transferId}`);
 
       sendMessage({
         type: 'webrtc-offer',
@@ -193,7 +205,17 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
   const handleWebRTCOffer = useCallback(async (transfer: TransferState, offer: RTCSessionDescriptionInit) => {
     try {
+      console.log(`Handling WebRTC offer for ${transfer.transferId}`);
       const peerConnection = createPeerConnection();
+      
+      peerConnection.onconnectionstatechange = () => {
+        console.log(`Receiver connection state changed to: ${peerConnection.connectionState}`);
+      };
+      
+      peerConnection.oniceconnectionstatechange = () => {
+        console.log(`Receiver ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+      };
+      
       updateTransfer(transfer.transferId, { 
         peerConnection, 
         status: 'connecting',
@@ -202,6 +224,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       });
 
       peerConnection.ondatachannel = (event) => {
+        console.log(`Data channel received for ${transfer.transferId}`);
         const dataChannel = event.channel;
         updateTransfer(transfer.transferId, { dataChannel });
         setupDataChannel(dataChannel, transfer.transferId, false);
@@ -209,6 +232,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
       peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
+          console.log(`Receiver sending ICE candidate for ${transfer.transferId}`);
           sendMessage({
             type: 'webrtc-ice-candidate',
             transferId: transfer.transferId,
@@ -220,6 +244,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       await peerConnection.setRemoteDescription(offer);
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
+      console.log(`Sending WebRTC answer for ${transfer.transferId}`);
 
       sendMessage({
         type: 'webrtc-answer',
@@ -253,24 +278,32 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
   }, []);
 
   const setupDataChannel = useCallback((dataChannel: RTCDataChannel, transferId: string, isSender: boolean) => {
+    console.log(`Setting up data channel for ${transferId}, isSender: ${isSender}`);
+    
     dataChannel.onopen = () => {
-      console.log('Data channel opened');
+      console.log(`Data channel opened for ${transferId}, readyState: ${dataChannel.readyState}`);
       updateTransfer(transferId, { status: 'connected' });
       
       if (isSender) {
+        console.log(`Starting file transfer for ${transferId}`);
         startFileTransfer(transferId);
       }
     };
 
     dataChannel.onmessage = (event) => {
+      console.log(`Data channel message received for ${transferId}, size: ${event.data.length}`);
       if (!isSender) {
         handleFileChunk(transferId, event.data);
       }
     };
 
     dataChannel.onerror = (error) => {
-      console.error('Data channel error:', error);
+      console.error(`Data channel error for ${transferId}:`, error);
       updateTransfer(transferId, { status: 'failed' });
+    };
+
+    dataChannel.onclose = () => {
+      console.log(`Data channel closed for ${transferId}`);
     };
   }, [updateTransfer]);
 
