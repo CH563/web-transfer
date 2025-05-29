@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Device, Transfer } from "@shared/schema";
 
 export default function Home() {
+  const { toast } = useToast();
   const [deviceName, setDeviceName] = useState(() => {
     const saved = localStorage.getItem('deviceName');
     return saved || `${navigator.platform} Device`;
