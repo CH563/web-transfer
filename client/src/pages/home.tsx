@@ -10,6 +10,7 @@ import SettingsPanel from "@/components/settings-panel";
 import IncomingTransfer from "@/components/incoming-transfer";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useWebRTC } from "@/hooks/use-webrtc";
+import { useToast } from "@/hooks/use-toast";
 import type { Device, Transfer } from "@shared/schema";
 
 export default function Home() {
@@ -106,12 +107,61 @@ export default function Home() {
     transferLock.current = true;
     
     try {
-      for (const file of files) {
-        console.log(`Sending file: ${file.name} to device: ${targetDevice.name}`);
-        await sendFile(file, targetDevice.deviceId);
+      // Check if this is a folder transfer (files have webkitRelativePath)
+      const hasFolder = files.some(file => file.webkitRelativePath);
+      
+      if (hasFolder) {
+        console.log(`Sending folder with ${files.length} files to device: ${targetDevice.name}`);
+        
+        // Group files by folder structure and send them
+        for (const file of files) {
+          const relativePath = file.webkitRelativePath || file.name;
+          console.log(`Sending file: ${relativePath}`);
+          
+          // Create transfer directly through server API for folder files
+          const transferId = `transfer_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+          
+          const response = await fetch(`/api/transfer/${transferId}/upload`, {
+            method: 'POST',
+            headers: {
+              'X-Filename': file.name,
+              'X-Relative-Path': relativePath,
+              'Content-Type': file.type || 'application/octet-stream',
+              'X-Sender-Id': deviceId,
+              'X-Receiver-Id': targetDevice.deviceId
+            },
+            body: file
+          });
+          
+          if (!response.ok) {
+            throw new Error(`Upload failed for ${relativePath}`);
+          }
+        }
+        
+        // Notify receiving device about folder transfer
+        sendMessage({
+          type: 'transfer-complete',
+          transferId: `folder_${Date.now()}`
+        });
+        
+        toast({
+          title: "Folder Sent",
+          description: `Folder with ${files.length} files sent to ${targetDevice.name}`
+        });
+      } else {
+        // Single file transfers
+        for (const file of files) {
+          console.log(`Sending file: ${file.name} to device: ${targetDevice.name}`);
+          await sendFile(file, targetDevice.deviceId);
+        }
       }
     } catch (error) {
-      console.error('Failed to send file:', error);
+      console.error('Failed to send files:', error);
+      toast({
+        title: "Transfer Failed",
+        description: "Failed to send files",
+        variant: "destructive"
+      });
     } finally {
       // Release lock after a short delay to prevent rapid duplicate triggers
       setTimeout(() => {

@@ -193,7 +193,7 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
       <input
         ref={folderInputRef}
         type="file"
-        webkitdirectory=""
+        {...({ webkitdirectory: "" } as any)}
         multiple
         className="hidden"
         onChange={handleFileInputChange}

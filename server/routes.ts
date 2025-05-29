@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import archiver from "archiver";
 import { storage } from "./storage";
 import { wsMessageSchema, type WSMessage } from "@shared/schema";
 import { z } from "zod";
@@ -218,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // File transfer storage for fallback
-  const fileTransfers = new Map<string, { file: Buffer; fileName: string; fileType: string; uploadedAt: Date }>();
+  const fileTransfers = new Map<string, { file: Buffer; fileName: string; fileType: string; relativePath: string; uploadedAt: Date }>();
 
   // REST API endpoints
   app.get('/api/devices', async (req, res) => {
@@ -256,11 +257,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const fileBuffer = Buffer.concat(chunks);
         const fileName = req.headers['x-filename'] as string || 'unknown';
         const fileType = req.headers['content-type'] || 'application/octet-stream';
+        const relativePath = req.headers['x-relative-path'] as string || fileName;
         
         fileTransfers.set(transferId, {
           file: fileBuffer,
           fileName,
           fileType,
+          relativePath,
           uploadedAt: new Date()
         });
         
