@@ -249,6 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fallback file upload endpoint
   app.post('/api/transfer/:transferId/upload', (req, res) => {
     const { transferId } = req.params;
+    console.log(`Received upload request for transfer ${transferId}`);
     
     // Check if this transfer has already been processed
     if (processedUploads.has(transferId)) {
@@ -258,12 +259,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const chunks: Buffer[] = [];
+    let totalReceived = 0;
     
     req.on('data', (chunk) => {
       chunks.push(chunk);
+      totalReceived += chunk.length;
+      console.log(`Received ${chunk.length} bytes, total: ${totalReceived}`);
+    });
+    
+    req.on('error', (error) => {
+      console.error(`Upload error for ${transferId}:`, error);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Upload failed' });
+      }
     });
     
     req.on('end', async () => {
+      console.log(`Upload complete for ${transferId}, processing ${totalReceived} bytes`);
       try {
         const fileBuffer = Buffer.concat(chunks);
         const fileName = decodeURIComponent(req.headers['x-filename'] as string || 'unknown');
