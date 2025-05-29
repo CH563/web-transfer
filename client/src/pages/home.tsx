@@ -145,13 +145,8 @@ export default function Home() {
     }
   };
 
-  // Combine active transfers from both sources
-  const allActiveTransfers = [
-    ...activeTransfers,
-    ...Object.values(webrtcTransfers).filter(t => 
-      !activeTransfers.some(at => at.transferId === t.transferId)
-    )
-  ];
+  // Use active transfers from server
+  const allActiveTransfers = activeTransfers || [];
 
   return (
     <div className="min-h-screen bg-background">

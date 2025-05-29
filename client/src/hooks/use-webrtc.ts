@@ -97,7 +97,9 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
   }, [deviceId, updateTransfer]);
 
   const fallbackToServerTransfer = useCallback(async (transfer: TransferState) => {
-    if (!transfer.file) return;
+    if (!transfer.file || transfer.status === 'transferring' || transfer.status === 'completed') {
+      return; // Prevent duplicate fallback attempts
+    }
     
     console.log(`Using server fallback for ${transfer.transferId}`);
     updateTransfer(transfer.transferId, { status: 'transferring', progress: 0 });
@@ -205,13 +207,14 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
         }
       };
       
-      // Add timeout fallback - if WebRTC doesn't connect within 10 seconds, use server relay
+      // Add timeout fallback - if WebRTC doesn't connect within 5 seconds, use server relay
       setTimeout(() => {
-        if (transfer.status === 'connecting') {
+        const currentTransfer = transfersRef.current[transfer.transferId];
+        if (currentTransfer && currentTransfer.status === 'connecting') {
           console.log('WebRTC connection timeout - falling back to server relay');
-          fallbackToServerTransfer(transfer);
+          fallbackToServerTransfer(currentTransfer);
         }
-      }, 10000);
+      }, 5000);
       
       const dataChannel = peerConnection.createDataChannel('fileTransfer', {
         ordered: true,
