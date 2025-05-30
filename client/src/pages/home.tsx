@@ -8,6 +8,7 @@ import TransferItem from "@/components/transfer-item";
 import TransferHistory from "@/components/transfer-history";
 import SettingsPanel from "@/components/settings-panel";
 import IncomingTransfer from "@/components/incoming-transfer";
+import ThemeToggle from "@/components/theme-toggle";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useWebRTC } from "@/hooks/use-webrtc";
 import { useToast } from "@/hooks/use-toast";
@@ -332,6 +333,9 @@ export default function Home() {
                 </div>
                 <span className="text-xs text-primary uppercase tracking-wider">{deviceName}</span>
               </div>
+
+              {/* 主题切换按钮 */}
+              <ThemeToggle />
             </div>
           </div>
         </div>

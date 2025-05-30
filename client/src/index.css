@@ -30,8 +30,8 @@
 }
 
 .dark {
-  --background: 220 25% 12%; /* 保持相同的柔和风格 */
-  --foreground: 45 80% 85%;
+  --background: 220 25% 12%; /* 深色模式 - 柔和深蓝灰 */
+  --foreground: 45 80% 85%; /* 温暖奶白色文字 */
   --muted: 220 20% 18%;
   --muted-foreground: 220 15% 60%;
   --popover: 220 25% 15%;
@@ -48,7 +48,35 @@
   --accent-foreground: 220 25% 12%;
   --destructive: 0 50% 60%;
   --destructive-foreground: 45 80% 85%;
+  --success: 140 45% 55%;
+  --success-foreground: 220 25% 12%;
   --ring: 50 70% 65%;
+  --radius: 0rem;
+}
+
+/* 亮色主题 - 像素风格 */
+.light {
+  --background: 45 40% 92%; /* 温暖浅色背景 */
+  --foreground: 220 25% 15%; /* 深色文字 */
+  --muted: 45 20% 88%; /* 浅灰色 */
+  --muted-foreground: 220 15% 45%; /* 中灰色文字 */
+  --popover: 45 40% 95%; /* 浅色弹窗 */
+  --popover-foreground: 220 25% 15%; /* 深色弹窗文字 */
+  --card: 45 30% 94%; /* 卡片背景 */
+  --card-foreground: 220 25% 15%; /* 深色卡片文字 */
+  --border: 220 25% 25%; /* 深色边框 */
+  --input: 45 25% 90%; /* 浅色输入框 */
+  --primary: 50 65% 45%; /* 深黄色主色 */
+  --primary-foreground: 45 40% 92%; /* 浅色主色文字 */
+  --secondary: 15 55% 50%; /* 深橙色副色 */
+  --secondary-foreground: 45 40% 92%; /* 浅色副色文字 */
+  --accent: 180 35% 45%; /* 深青色强调 */
+  --accent-foreground: 45 40% 92%; /* 浅色强调文字 */
+  --destructive: 0 45% 50%; /* 深红色 */
+  --destructive-foreground: 45 40% 92%; /* 浅色破坏文字 */
+  --success: 140 40% 40%; /* 深绿色成功 */
+  --success-foreground: 45 40% 92%; /* 浅色成功文字 */
+  --ring: 50 65% 45%; /* 深色聚焦环 */
   --radius: 0rem;
 }
 
