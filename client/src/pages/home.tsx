@@ -39,9 +39,18 @@ export default function Home() {
     onTransferOffer: setIncomingTransfer,
     onConnectionStatusChange: setConnectionStatus,
     onTransferUpdate: (transfer) => {
-      setActiveTransfers(prev => prev.map(t => 
-        t.transferId === transfer.transferId ? { ...t, ...transfer } : t
-      ));
+      // 传输状态更新：确保状态同步且无重复记录
+      setActiveTransfers(prev => {
+        const existingIndex = prev.findIndex(t => t.transferId === transfer.transferId);
+        if (existingIndex >= 0) {
+          // 更新现有传输记录
+          const updated = [...prev];
+          updated[existingIndex] = { ...updated[existingIndex], ...transfer };
+          return updated;
+        }
+        // 如果传输记录不存在，添加新记录（通常不应该发生）
+        return [...prev, transfer as any];
+      });
     }
   });
 
@@ -65,8 +74,21 @@ export default function Home() {
       const response = await fetch(`/api/transfers/${deviceId}`);
       if (response.ok) {
         const { active, history } = await response.json();
-        setActiveTransfers(active);
-        setTransferHistory(history);
+        
+        // 去重处理：使用transferId作为唯一标识防止重复传输记录
+        const deduplicateTransfers = (transfers: any[]) => {
+          const seen = new Set();
+          return transfers.filter(transfer => {
+            if (seen.has(transfer.transferId)) {
+              return false;
+            }
+            seen.add(transfer.transferId);
+            return true;
+          });
+        };
+        
+        setActiveTransfers(deduplicateTransfers(active));
+        setTransferHistory(deduplicateTransfers(history));
       }
     } catch (error) {
       console.error('Failed to fetch transfers:', error);
@@ -216,7 +238,18 @@ export default function Home() {
         progress: 0
       };
       
-      setActiveTransfers(prev => [...prev, receiverTransfer as any]);
+      // 防重复添加：确保相同transferId的传输不会重复出现
+      setActiveTransfers(prev => {
+        const exists = prev.some(t => t.transferId === receiverTransfer.transferId);
+        if (exists) {
+          return prev.map(t => 
+            t.transferId === receiverTransfer.transferId 
+              ? { ...t, ...receiverTransfer } 
+              : t
+          );
+        }
+        return [...prev, receiverTransfer as any];
+      });
       setIncomingTransfer(null);
       
       // Schedule download check for when transfer completes

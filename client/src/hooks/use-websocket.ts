@@ -157,6 +157,12 @@ export function useWebSocket({
         window.dispatchEvent(new CustomEvent('webrtc-message', { detail: message }));
         break;
       
+      case 'pong':
+        // 心跳响应：确认连接活跃，记录延迟信息
+        const latency = Date.now() - (message.originalTimestamp || 0);
+        console.log(`WebSocket heartbeat: ${latency}ms latency`);
+        break;
+      
       default:
         console.log('Unknown message type:', message.type);
     }
