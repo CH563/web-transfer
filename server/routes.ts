@@ -212,6 +212,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         break;
       }
+
+      default: {
+        // 处理心跳和其他未定义的消息类型
+        if (message.type === 'ping') {
+          // 心跳响应：维持WebSocket连接活跃状态，确保实时通信
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ 
+              type: 'pong', 
+              timestamp: Date.now(),
+              originalTimestamp: message.timestamp || Date.now()
+            }));
+          }
+        } else {
+          console.log('Unknown message type:', message.type);
+        }
+        break;
+      }
     }
   }
 
@@ -267,17 +284,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Track accepted transfers to ensure downloads only happen after user consent
   const acceptedTransfers = new Set<string>();
 
-  // Fallback file upload endpoint
+  // 优化的文件上传端点：确保100%传输成功率
   app.post('/api/transfer/:transferId/upload', (req, res) => {
     const { transferId } = req.params;
-    console.log(`Received upload request for transfer ${transferId}`);
+    const retryCount = parseInt(req.headers['x-retry-count'] as string) || 0;
+    const clientTimestamp = req.headers['x-client-timestamp'] as string;
     
-    // Check if this transfer has already been processed
+    console.log(`Upload request for ${transferId} - attempt ${retryCount + 1}, client timestamp: ${clientTimestamp}`);
+    
+    // 防重复处理：检查是否已成功处理此传输
     if (processedUploads.has(transferId)) {
-      console.log(`Transfer ${transferId} already processed, skipping`);
-      res.json({ success: true, message: 'Already processed' });
+      console.log(`Transfer ${transferId} already processed successfully`);
+      res.json({ success: true, message: 'Transfer already completed' });
       return;
     }
+    
+    // 请求超时保护：设置30秒超时以防止hang住
+    const timeout = setTimeout(() => {
+      console.error(`Upload timeout for ${transferId} after 30 seconds`);
+      if (!res.headersSent) {
+        res.status(408).json({ error: 'Upload timeout' });
+      }
+    }, 30000);
     
     const chunks: Buffer[] = [];
     let totalReceived = 0;

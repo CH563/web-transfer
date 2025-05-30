@@ -98,6 +98,15 @@ export const wsMessageSchema = z.discriminatedUnion("type", [
     transferId: z.string(),
     error: z.string(),
   }),
+  z.object({
+    type: z.literal("ping"),
+    timestamp: z.number(),
+  }),
+  z.object({
+    type: z.literal("pong"),
+    timestamp: z.number(),
+    originalTimestamp: z.number(),
+  }),
 ]);
 
 export type WSMessage = z.infer<typeof wsMessageSchema>;
