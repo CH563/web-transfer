@@ -32,7 +32,7 @@ export default function SettingsPanel({ deviceName, onDeviceNameChange }: Settin
 
   return (
     <div className="bg-card pixel-border border-primary pixel-shadow p-6">
-      <h2 className="text-lg text-accent uppercase tracking-wider mb-6 pixel-blink">SETTINGS</h2>
+      <h2 className="text-lg text-accent uppercase tracking-wider mb-6 pixel-glow">SETTINGS</h2>
       
       <div className="space-y-6">
         {/* Device Name */}

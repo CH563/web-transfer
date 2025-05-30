@@ -3,52 +3,52 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 像素风格主题 - 吃豆人游戏风格 */
+/* 像素风格主题 - 柔和复古风格 */
 :root {
-  --background: 240 100% 6%; /* #000033 深蓝色背景 */
-  --foreground: 60 100% 100%; /* #FFFF00 黄色文字 */
-  --muted: 240 50% 15%; /* 深蓝灰色 */
-  --muted-foreground: 240 30% 70%; /* 浅蓝色 */
-  --popover: 240 100% 8%; /* 深蓝弹窗 */
-  --popover-foreground: 60 100% 100%; /* 黄色弹窗文字 */
-  --card: 240 100% 4%; /* #000066 卡片背景 */
-  --card-foreground: 60 100% 100%; /* 黄色卡片文字 */
-  --border: 0 100% 100%; /* #FFFFFF 白色边框 */
-  --input: 240 100% 8%; /* 深蓝输入框 */
-  --primary: 60 100% 50%; /* #FFFF00 黄色主色 */
-  --primary-foreground: 240 100% 6%; /* 深蓝主色文字 */
-  --secondary: 0 100% 50%; /* #FF0000 红色副色 */
-  --secondary-foreground: 60 100% 100%; /* 黄色副色文字 */
-  --accent: 195 100% 50%; /* #00FFFF 青色强调 */
-  --accent-foreground: 240 100% 6%; /* 深蓝强调文字 */
-  --destructive: 0 100% 50%; /* #FF0000 红色破坏 */
-  --destructive-foreground: 60 100% 100%; /* 黄色破坏文字 */
-  --success: 120 100% 50%; /* #00FF00 绿色成功 */
-  --success-foreground: 240 100% 6%; /* 深蓝成功文字 */
-  --ring: 60 100% 50%; /* 黄色聚焦环 */
+  --background: 220 25% 12%; /* 柔和深蓝灰背景 */
+  --foreground: 45 80% 85%; /* 温暖奶白色文字 */
+  --muted: 220 20% 18%; /* 柔和深灰色 */
+  --muted-foreground: 220 15% 60%; /* 中性灰色 */
+  --popover: 220 25% 15%; /* 深色弹窗 */
+  --popover-foreground: 45 80% 85%; /* 温暖弹窗文字 */
+  --card: 220 20% 16%; /* 卡片背景 */
+  --card-foreground: 45 80% 85%; /* 温暖卡片文字 */
+  --border: 200 30% 75%; /* 柔和浅蓝边框 */
+  --input: 220 15% 20%; /* 深色输入框 */
+  --primary: 50 70% 65%; /* 温暖黄色主色 */
+  --primary-foreground: 220 25% 12%; /* 深色主色文字 */
+  --secondary: 15 60% 60%; /* 柔和橙色副色 */
+  --secondary-foreground: 220 25% 12%; /* 深色副色文字 */
+  --accent: 180 40% 65%; /* 柔和青色强调 */
+  --accent-foreground: 220 25% 12%; /* 深色强调文字 */
+  --destructive: 0 50% 60%; /* 柔和红色 */
+  --destructive-foreground: 45 80% 85%; /* 温暖破坏文字 */
+  --success: 140 45% 55%; /* 柔和绿色成功 */
+  --success-foreground: 220 25% 12%; /* 深色成功文字 */
+  --ring: 50 70% 65%; /* 温暖聚焦环 */
   --radius: 0rem; /* 像素风格无圆角 */
 }
 
 .dark {
-  --background: 240 100% 6%; /* 保持像素风格 */
-  --foreground: 60 100% 100%;
-  --muted: 240 50% 15%;
-  --muted-foreground: 240 30% 70%;
-  --popover: 240 100% 8%;
-  --popover-foreground: 60 100% 100%;
-  --card: 240 100% 4%;
-  --card-foreground: 60 100% 100%;
-  --border: 0 100% 100%;
-  --input: 240 100% 8%;
-  --primary: 60 100% 50%;
-  --primary-foreground: 240 100% 6%;
-  --secondary: 0 100% 50%;
-  --secondary-foreground: 60 100% 100%;
-  --accent: 195 100% 50%;
-  --accent-foreground: 240 100% 6%;
-  --destructive: 0 100% 50%;
-  --destructive-foreground: 60 100% 100%;
-  --ring: 60 100% 50%;
+  --background: 220 25% 12%; /* 保持相同的柔和风格 */
+  --foreground: 45 80% 85%;
+  --muted: 220 20% 18%;
+  --muted-foreground: 220 15% 60%;
+  --popover: 220 25% 15%;
+  --popover-foreground: 45 80% 85%;
+  --card: 220 20% 16%;
+  --card-foreground: 45 80% 85%;
+  --border: 200 30% 75%;
+  --input: 220 15% 20%;
+  --primary: 50 70% 65%;
+  --primary-foreground: 220 25% 12%;
+  --secondary: 15 60% 60%;
+  --secondary-foreground: 220 25% 12%;
+  --accent: 180 40% 65%;
+  --accent-foreground: 220 25% 12%;
+  --destructive: 0 50% 60%;
+  --destructive-foreground: 45 80% 85%;
+  --ring: 50 70% 65%;
   --radius: 0rem;
 }
 
@@ -122,9 +122,9 @@
     animation: pacmanMove 2s linear infinite;
   }
   
-  /* 像素闪烁效果 */
-  .pixel-blink {
-    animation: pixelBlink 1s steps(2, start) infinite;
+  /* 柔和的像素发光效果 */
+  .pixel-glow {
+    animation: pixelGlow 3s ease-in-out infinite alternate;
   }
 }
 
@@ -155,12 +155,14 @@
   }
 }
 
-@keyframes pixelBlink {
-  0%, 50% { 
-    opacity: 1; 
+@keyframes pixelGlow {
+  0% { 
+    opacity: 0.8;
+    filter: brightness(1);
   }
-  51%, 100% { 
-    opacity: 0.3; 
+  100% { 
+    opacity: 1;
+    filter: brightness(1.1);
   }
 }
 

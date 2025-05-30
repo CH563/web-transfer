@@ -308,7 +308,7 @@ export default function Home() {
               <div className="w-12 h-12 bg-primary pixel-border border-card flex items-center justify-center pixel-shadow">
                 <Share className="text-primary-foreground" size={20} />
               </div>
-              <h1 className="text-2xl text-primary pixel-blink">PIXELDROP</h1>
+              <h1 className="text-2xl text-primary pixel-glow">PIXELDROP</h1>
             </div>
             
             <div className="flex items-center space-x-6">
@@ -316,7 +316,7 @@ export default function Home() {
               <div className="flex items-center space-x-3">
                 <div className={`w-6 h-6 pixel-border ${
                   connectionStatus === 'connected' ? 'bg-success border-success connection-pulse' :
-                  connectionStatus === 'connecting' ? 'bg-secondary border-secondary pixel-blink' : 
+                  connectionStatus === 'connecting' ? 'bg-secondary border-secondary pixel-glow' : 
                   'bg-destructive border-destructive'
                 }`} />
                 <span className="text-xs text-accent uppercase tracking-wider">
@@ -349,7 +349,7 @@ export default function Home() {
             {/* 像素风格活跃传输 */}
             {allActiveTransfers.length > 0 && (
               <div className="bg-card pixel-border border-primary pixel-shadow p-6">
-                <h2 className="text-lg text-accent uppercase tracking-wider mb-6 pixel-blink">
+                <h2 className="text-lg text-accent uppercase tracking-wider mb-6 pixel-glow">
                   ACTIVE TRANSFERS
                 </h2>
                 <div className="space-y-6">
