@@ -118,67 +118,76 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
   };
 
   return (
-    <Card 
-      className={`p-8 text-center border-2 border-dashed transition-all duration-300 hover:border-primary cursor-pointer ${
-        isDragOver ? 'drag-over' : 'border-muted-foreground/25'
+    <div 
+      className={`bg-card pixel-border border-primary pixel-shadow p-8 text-center cursor-pointer transition-all duration-200 ${
+        isDragOver ? 'drag-over' : 'hover:bg-primary/5'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onClick={handleFileSelect}
     >
-      <div className="space-y-4">
-        <div className="w-16 h-16 mx-auto bg-muted rounded-full flex items-center justify-center">
-          <CloudUpload className="text-2xl text-muted-foreground" size={32} />
+      <div className="space-y-6">
+        <div className="w-20 h-20 mx-auto bg-primary pixel-border border-card flex items-center justify-center pixel-shadow">
+          <CloudUpload className="text-primary-foreground" size={40} />
         </div>
         
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Drop files or folders here to share</h3>
-          <p className="text-muted-foreground">or click to select files/folders from your device</p>
+          <h3 className="text-lg text-accent uppercase tracking-wider mb-2 pixel-font">
+            DROP FILES HERE
+          </h3>
+          <p className="text-muted-foreground text-xs uppercase tracking-wider">
+            OR CLICK TO SELECT FILES/FOLDERS
+          </p>
         </div>
 
         {availableDevices.length > 0 && (
           <div className="max-w-xs mx-auto">
-            <Select value={selectedDevice} onValueChange={setSelectedDevice}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select target device" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableDevices.map((device) => (
-                  <SelectItem key={device.deviceId} value={device.deviceId}>
-                    {device.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="bg-input pixel-border border-border">
+              <Select value={selectedDevice} onValueChange={setSelectedDevice}>
+                <SelectTrigger className="pixel-border border-0 bg-transparent text-xs uppercase tracking-wider">
+                  <SelectValue placeholder="SELECT TARGET DEVICE" />
+                </SelectTrigger>
+                <SelectContent className="bg-card pixel-border border-primary">
+                  {availableDevices.map((device) => (
+                    <SelectItem 
+                      key={device.deviceId} 
+                      value={device.deviceId}
+                      className="text-xs uppercase tracking-wider hover:bg-primary/20"
+                    >
+                      {device.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         )}
 
-        <div className="flex gap-2 justify-center">
-          <Button 
-            className="inline-flex items-center"
+        <div className="flex gap-4 justify-center">
+          <button 
+            className="bg-secondary text-secondary-foreground pixel-button px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50"
             disabled={!selectedDevice}
             onClick={(e) => {
               e.stopPropagation();
               handleFileSelect();
             }}
           >
-            <Plus className="mr-2" size={16} />
-            Select Files
-          </Button>
+            <Plus className="inline mr-2" size={12} />
+            FILES
+          </button>
           
-          <Button 
-            variant="outline"
-            className="inline-flex items-center"
+          <button 
+            className="bg-accent text-accent-foreground pixel-button px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-50"
             disabled={!selectedDevice}
             onClick={(e) => {
               e.stopPropagation();
               handleFolderSelect();
             }}
           >
-            <Folder className="mr-2" size={16} />
-            Select Folder
-          </Button>
+            <Folder className="inline mr-2" size={12} />
+            FOLDER
+          </button>
         </div>
       </div>
 
@@ -198,6 +207,6 @@ export default function FileDropZone({ onFileDrop, availableDevices }: FileDropZ
         className="hidden"
         onChange={handleFileInputChange}
       />
-    </Card>
+    </div>
   );
 }
