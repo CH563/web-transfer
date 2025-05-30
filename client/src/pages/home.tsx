@@ -299,40 +299,44 @@ export default function Home() {
   const allActiveTransfers = activeTransfers || [];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm border-b border-border">
+    <div className="min-h-screen bg-background pixel-font">
+      {/* 像素风格头部 */}
+      <header className="bg-card pixel-border border-primary pixel-shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Share className="text-primary-foreground" size={16} />
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary pixel-border border-card flex items-center justify-center pixel-shadow">
+                <Share className="text-primary-foreground" size={20} />
               </div>
-              <h1 className="text-xl font-bold text-foreground">WebDrop</h1>
+              <h1 className="text-2xl text-primary pixel-blink">PIXELDROP</h1>
             </div>
             
-            <div className="flex items-center space-x-4">
-              {/* Connection Status */}
-              <div className="flex items-center space-x-2">
-                <div className={`w-3 h-3 rounded-full ${
-                  connectionStatus === 'connected' ? 'bg-green-500 connection-pulse' :
-                  connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
+            <div className="flex items-center space-x-6">
+              {/* 像素风格连接状态 */}
+              <div className="flex items-center space-x-3">
+                <div className={`w-6 h-6 pixel-border ${
+                  connectionStatus === 'connected' ? 'bg-success border-success connection-pulse' :
+                  connectionStatus === 'connecting' ? 'bg-secondary border-secondary pixel-blink' : 
+                  'bg-destructive border-destructive'
                 }`} />
-                <span className="text-sm text-muted-foreground capitalize">
-                  {connectionStatus}
+                <span className="text-xs text-accent uppercase tracking-wider">
+                  {connectionStatus === 'connected' ? 'ONLINE' :
+                   connectionStatus === 'connecting' ? 'SYNC...' : 'OFFLINE'}
                 </span>
               </div>
               
-              {/* Device Name */}
-              <div className="flex items-center space-x-2">
-                <Laptop className="text-muted-foreground" size={16} />
-                <span className="text-sm font-medium text-foreground">{deviceName}</span>
+              {/* 像素风格设备名称 */}
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 bg-accent pixel-border border-card flex items-center justify-center">
+                  <Laptop className="text-accent-foreground" size={12} />
+                </div>
+                <span className="text-xs text-primary uppercase tracking-wider">{deviceName}</span>
               </div>
               
-              {/* Settings */}
-              <Button variant="ghost" size="sm">
-                <Cog size={16} />
-              </Button>
+              {/* 像素风格设置按钮 */}
+              <button className="w-8 h-8 bg-muted pixel-border border-border hover:bg-accent pixel-button">
+                <Cog className="text-muted-foreground" size={12} />
+              </button>
             </div>
           </div>
         </div>
@@ -340,18 +344,20 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Transfer Area */}
-          <div className="lg:col-span-2 space-y-6">
+          {/* 像素风格主传输区域 */}
+          <div className="lg:col-span-2 space-y-8">
             <FileDropZone 
               onFileDrop={handleFileDrop}
               availableDevices={availableDevices}
             />
 
-            {/* Active Transfers */}
+            {/* 像素风格活跃传输 */}
             {allActiveTransfers.length > 0 && (
-              <Card className="p-6">
-                <h2 className="text-lg font-semibold text-foreground mb-4">Active Transfers</h2>
-                <div className="space-y-4">
+              <div className="bg-card pixel-border border-primary pixel-shadow p-6">
+                <h2 className="text-lg text-accent uppercase tracking-wider mb-6 pixel-blink">
+                  ACTIVE TRANSFERS
+                </h2>
+                <div className="space-y-6">
                   {allActiveTransfers.map((transfer) => (
                     <TransferItem 
                       key={transfer.transferId} 
@@ -361,7 +367,7 @@ export default function Home() {
                     />
                   ))}
                 </div>
-              </Card>
+              </div>
             )}
 
             {/* Incoming Transfer Request */}

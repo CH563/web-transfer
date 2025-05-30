@@ -1,53 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 像素风格主题 - 吃豆人游戏风格 */
 :root {
-  --background: 250 50% 98%; /* #FAFAFA */
-  --foreground: 20 14.3% 4.1%;
-  --muted: 60 4.8% 95.9%;
-  --muted-foreground: 25 5.3% 44.7%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 20 14.3% 4.1%;
-  --card: 0 0% 100%; /* #FFFFFF */
-  --card-foreground: 20 14.3% 4.1%;
-  --border: 20 5.9% 90%;
-  --input: 20 5.9% 90%;
-  --primary: 207 90% 54%; /* #1976D2 */
-  --primary-foreground: 211 100% 99%;
-  --secondary: 45 100% 51%; /* #FFC107 */
-  --secondary-foreground: 24 9.8% 10%;
-  --accent: 60 4.8% 95.9%;
-  --accent-foreground: 24 9.8% 10%;
-  --destructive: 4 90% 58%; /* #F44336 */
-  --destructive-foreground: 60 9.1% 97.8%;
-  --success: 122 39% 49%; /* #4CAF50 */
-  --success-foreground: 60 9.1% 97.8%;
-  --ring: 20 14.3% 4.1%;
-  --radius: 0.5rem;
+  --background: 240 100% 6%; /* #000033 深蓝色背景 */
+  --foreground: 60 100% 100%; /* #FFFF00 黄色文字 */
+  --muted: 240 50% 15%; /* 深蓝灰色 */
+  --muted-foreground: 240 30% 70%; /* 浅蓝色 */
+  --popover: 240 100% 8%; /* 深蓝弹窗 */
+  --popover-foreground: 60 100% 100%; /* 黄色弹窗文字 */
+  --card: 240 100% 4%; /* #000066 卡片背景 */
+  --card-foreground: 60 100% 100%; /* 黄色卡片文字 */
+  --border: 0 100% 100%; /* #FFFFFF 白色边框 */
+  --input: 240 100% 8%; /* 深蓝输入框 */
+  --primary: 60 100% 50%; /* #FFFF00 黄色主色 */
+  --primary-foreground: 240 100% 6%; /* 深蓝主色文字 */
+  --secondary: 0 100% 50%; /* #FF0000 红色副色 */
+  --secondary-foreground: 60 100% 100%; /* 黄色副色文字 */
+  --accent: 195 100% 50%; /* #00FFFF 青色强调 */
+  --accent-foreground: 240 100% 6%; /* 深蓝强调文字 */
+  --destructive: 0 100% 50%; /* #FF0000 红色破坏 */
+  --destructive-foreground: 60 100% 100%; /* 黄色破坏文字 */
+  --success: 120 100% 50%; /* #00FF00 绿色成功 */
+  --success-foreground: 240 100% 6%; /* 深蓝成功文字 */
+  --ring: 60 100% 50%; /* 黄色聚焦环 */
+  --radius: 0rem; /* 像素风格无圆角 */
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --primary: 207 90% 54%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --ring: 240 4.9% 83.9%;
-  --radius: 0.5rem;
+  --background: 240 100% 6%; /* 保持像素风格 */
+  --foreground: 60 100% 100%;
+  --muted: 240 50% 15%;
+  --muted-foreground: 240 30% 70%;
+  --popover: 240 100% 8%;
+  --popover-foreground: 60 100% 100%;
+  --card: 240 100% 4%;
+  --card-foreground: 60 100% 100%;
+  --border: 0 100% 100%;
+  --input: 240 100% 8%;
+  --primary: 60 100% 50%;
+  --primary-foreground: 240 100% 6%;
+  --secondary: 0 100% 50%;
+  --secondary-foreground: 60 100% 100%;
+  --accent: 195 100% 50%;
+  --accent-foreground: 240 100% 6%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 60 100% 100%;
+  --ring: 60 100% 50%;
+  --radius: 0rem;
 }
 
 @layer base {
@@ -56,32 +58,127 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-background text-foreground;
+    font-family: 'Press Start 2P', monospace;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
   }
 }
 
 @layer utilities {
+  /* 像素风格基础类 */
+  .pixel-font {
+    font-family: 'Press Start 2P', monospace;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+  
+  .pixel-border {
+    border-width: 3px;
+    border-style: solid;
+    border-radius: 0;
+  }
+  
+  .pixel-shadow {
+    box-shadow: 6px 6px 0px hsl(var(--border));
+  }
+  
+  /* 拖拽效果 - 像素风格 */
   .drag-over {
-    @apply border-primary bg-primary/5 scale-[1.02] transition-all duration-300;
+    @apply border-primary bg-primary/20 pixel-border;
+    animation: pixelPulse 0.5s infinite alternate;
   }
   
+  /* 连接状态脉冲 */
   .connection-pulse {
-    animation: pulse 2s infinite;
+    animation: pixelPulse 1s infinite alternate;
   }
   
+  /* 淡入效果 - 像素风格 */
   .fade-in {
-    animation: fadeIn 0.5s ease-in-out;
+    animation: pixelFadeIn 0.3s steps(3, end);
+  }
+  
+  /* 像素按钮效果 */
+  .pixel-button {
+    @apply pixel-border pixel-shadow;
+    transition: all 0.1s steps(2, end);
+  }
+  
+  .pixel-button:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 3px 3px 0px hsl(var(--border));
+  }
+  
+  .pixel-button:active {
+    transform: translate(6px, 6px);
+    box-shadow: none;
+  }
+  
+  /* 吃豆人风格移动动画 */
+  .pacman-move {
+    animation: pacmanMove 2s linear infinite;
+  }
+  
+  /* 像素闪烁效果 */
+  .pixel-blink {
+    animation: pixelBlink 1s steps(2, start) infinite;
   }
 }
 
-@keyframes fadeIn {
-  from { 
+/* 像素风格动画关键帧 */
+@keyframes pixelFadeIn {
+  0% { 
     opacity: 0; 
-    transform: translateY(10px); 
+    transform: scale(0.8);
   }
-  to { 
+  50% { 
+    opacity: 0.5; 
+    transform: scale(0.9);
+  }
+  100% { 
     opacity: 1; 
-    transform: translateY(0); 
+    transform: scale(1);
+  }
+}
+
+@keyframes pixelPulse {
+  0% { 
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  100% { 
+    transform: scale(1.05);
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes pixelBlink {
+  0%, 50% { 
+    opacity: 1; 
+  }
+  51%, 100% { 
+    opacity: 0.3; 
+  }
+}
+
+@keyframes pacmanMove {
+  0% { 
+    transform: translateX(-100%) rotate(0deg);
+  }
+  25% { 
+    transform: translateX(-50%) rotate(90deg);
+  }
+  50% { 
+    transform: translateX(0%) rotate(180deg);
+  }
+  75% { 
+    transform: translateX(50%) rotate(270deg);
+  }
+  100% { 
+    transform: translateX(100%) rotate(360deg);
   }
 }
 
@@ -99,4 +196,14 @@
 
 .animate-slide-right {
   animation: slide-right 2s infinite;
+}
+
+/* 像素风格进度条动画 */
+@keyframes pixelProgress {
+  0% { 
+    background-position: 0 0; 
+  }
+  100% { 
+    background-position: 24px 0; 
+  }
 }
