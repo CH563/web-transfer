@@ -31,55 +31,61 @@ export default function SettingsPanel({ deviceName, onDeviceNameChange }: Settin
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-lg font-semibold text-foreground mb-4">Settings</h2>
+    <div className="bg-card pixel-border border-primary pixel-shadow p-6">
+      <h2 className="text-lg text-accent uppercase tracking-wider mb-6 pixel-blink">SETTINGS</h2>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Device Name */}
-        <div className="space-y-2">
-          <Label htmlFor="device-name" className="text-sm font-medium text-foreground">
-            Device Name
+        <div className="space-y-3">
+          <Label htmlFor="device-name" className="text-xs text-primary uppercase tracking-wider pixel-font">
+            DEVICE NAME
           </Label>
           <Input
             id="device-name"
             value={deviceName}
             onChange={(e) => onDeviceNameChange(e.target.value)}
-            className="w-full"
+            className="w-full pixel-border border-border bg-input text-foreground pixel-font text-xs uppercase tracking-wider"
           />
         </div>
 
         {/* Auto Accept */}
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label className="text-sm font-medium text-foreground">
-              Auto Accept
+          <div className="space-y-1">
+            <Label className="text-xs text-primary uppercase tracking-wider pixel-font">
+              AUTO ACCEPT
             </Label>
-            <p className="text-xs text-muted-foreground">
-              Automatically accept files from trusted devices
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              AUTO ACCEPT FROM TRUSTED DEVICES
             </p>
           </div>
-          <Switch
-            checked={autoAccept}
-            onCheckedChange={handleAutoAcceptChange}
-          />
+          <div className="pixel-border border-border bg-muted p-1">
+            <Switch
+              checked={autoAccept}
+              onCheckedChange={handleAutoAcceptChange}
+              className="data-[state=checked]:bg-success data-[state=unchecked]:bg-destructive"
+            />
+          </div>
         </div>
 
         {/* Sound Notifications */}
         <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <Label className="text-sm font-medium text-foreground">
-              Sound Notifications
+          <div className="space-y-1">
+            <Label className="text-xs text-primary uppercase tracking-wider pixel-font">
+              SOUND ALERTS
             </Label>
-            <p className="text-xs text-muted-foreground">
-              Play sound for incoming files
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">
+              PLAY SOUND FOR INCOMING FILES
             </p>
           </div>
-          <Switch
-            checked={soundNotifications}
-            onCheckedChange={handleSoundNotificationsChange}
-          />
+          <div className="pixel-border border-border bg-muted p-1">
+            <Switch
+              checked={soundNotifications}
+              onCheckedChange={handleSoundNotificationsChange}
+              className="data-[state=checked]:bg-success data-[state=unchecked]:bg-destructive"
+            />
+          </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
