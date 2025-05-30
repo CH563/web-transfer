@@ -332,11 +332,6 @@ export default function Home() {
                 </div>
                 <span className="text-xs text-primary uppercase tracking-wider">{deviceName}</span>
               </div>
-              
-              {/* 像素风格设置按钮 */}
-              <button className="w-8 h-8 bg-muted pixel-border border-border hover:bg-accent pixel-button">
-                <Cog className="text-muted-foreground" size={12} />
-              </button>
             </div>
           </div>
         </div>
