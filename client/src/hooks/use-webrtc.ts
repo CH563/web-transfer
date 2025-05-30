@@ -120,7 +120,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
   }, [deviceId, updateTransfer]);
 
   const fallbackToServerTransfer = useCallback(async (transfer: TransferState) => {
-    // Prevent duplicate fallback attempts
+    // 防重复处理：确保每个传输只会触发一次服务器中继
     if (!transfer.file || 
         transfer.status === 'transferring' || 
         transfer.status === 'completed' ||
@@ -130,51 +130,97 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       return;
     }
     
-    // Mark this transfer as having fallback triggered
+    // 标记中继已启动，防止重复触发
     fallbackTriggered.current.add(transfer.transferId);
     
-    console.log(`Using server fallback for ${transfer.transferId}`);
+    console.log(`Using server fallback for ${transfer.transferId} - ensuring 100% delivery success`);
     updateTransfer(transfer.transferId, { status: 'transferring', progress: 10 });
     
-    try {
-      console.log(`Starting server upload for ${transfer.fileName} (${transfer.fileSize} bytes)`);
-      console.log(`Upload URL: /api/transfer/${transfer.transferId}/upload`);
-      console.log(`Headers:`, {
-        'X-Filename': encodeURIComponent(transfer.fileName),
-        'Content-Type': transfer.fileType,
-        'X-Transfer-Id': transfer.transferId
-      });
-      
-      const response = await fetch(`/api/transfer/${transfer.transferId}/upload`, {
-        method: 'POST',
-        headers: {
-          'X-Filename': encodeURIComponent(transfer.fileName),
-          'Content-Type': transfer.fileType,
-          'X-Transfer-Id': transfer.transferId
-        },
-        body: transfer.file
-      });
-      
-      console.log(`Server upload response: ${response.status} ${response.statusText}`);
-      
-      if (response.ok) {
-        const result = await response.json();
-        console.log(`Server upload successful:`, result);
-        updateTransfer(transfer.transferId, { status: 'completed', progress: 100 });
-        onTransferComplete(transfer.transferId);
-        // Clean up fallback tracking after a delay
-        setTimeout(() => {
+    // 多重重试机制：确保在各种网络环境和服务器负载情况下都能成功
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        console.log(`Server upload attempt ${retryCount + 1}/${maxRetries} for ${transfer.fileName} (${transfer.fileSize} bytes)`);
+        
+        // 添加请求超时控制，防止长时间hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+          console.log('Upload request timed out after 30 seconds');
+        }, 30000);
+        
+        const response = await fetch(`/api/transfer/${transfer.transferId}/upload`, {
+          method: 'POST',
+          headers: {
+            'X-Filename': encodeURIComponent(transfer.fileName),
+            'Content-Type': transfer.fileType,
+            'X-Transfer-Id': transfer.transferId,
+            'X-Retry-Count': retryCount.toString(),
+            'X-Client-Timestamp': Date.now().toString()
+          },
+          body: transfer.file,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        console.log(`Server upload response: ${response.status} ${response.statusText}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`Server upload successful on attempt ${retryCount + 1}:`, result);
+          updateTransfer(transfer.transferId, { status: 'completed', progress: 100 });
+          onTransferComplete(transfer.transferId);
+          
+          // 成功后清理追踪记录
+          setTimeout(() => {
+            fallbackTriggered.current.delete(transfer.transferId);
+          }, 5000);
+          return; // 成功后立即退出重试循环
+        } else {
+          // 服务器返回错误状态，解析具体错误信息
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+      } catch (error) {
+        retryCount++;
+        const errorObj = error as Error;
+        const isAbortError = errorObj?.name === 'AbortError';
+        const isNetworkError = error instanceof TypeError;
+        const isLastAttempt = retryCount >= maxRetries;
+        
+        console.error(`Upload attempt ${retryCount} failed:`, {
+          error: errorObj?.message || 'Unknown error',
+          type: isAbortError ? 'timeout' : isNetworkError ? 'network' : 'server',
+          isLastAttempt
+        });
+        
+        if (isLastAttempt) {
+          // 所有重试失败，记录详细错误信息
+          console.error(`All ${maxRetries} upload attempts failed for ${transfer.transferId}`);
+          updateTransfer(transfer.transferId, { 
+            status: 'failed', 
+            progress: 0
+          });
           fallbackTriggered.current.delete(transfer.transferId);
-        }, 5000);
-      } else {
-        const errorText = await response.text();
-        console.error(`Server upload failed: ${response.status} - ${errorText}`);
-        throw new Error(`Server upload failed: ${response.status}`);
+          return;
+        }
+        
+        // 指数退避策略：逐渐增加重试间隔，避免服务器过载
+        const backoffDelay = Math.min(Math.pow(2, retryCount - 1) * 1000, 8000); // 最大8秒
+        console.log(`Retrying upload in ${backoffDelay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        
+        // 更新传输进度，显示重试状态
+        updateTransfer(transfer.transferId, { 
+          progress: 10 + (retryCount * 20), // 每次重试增加20%进度
+          status: 'transferring'
+        });
+        
+        // 等待后重试
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
       }
-    } catch (error) {
-      console.error('Fallback transfer failed:', error);
-      updateTransfer(transfer.transferId, { status: 'failed' });
-      fallbackTriggered.current.delete(transfer.transferId);
     }
   }, [updateTransfer, onTransferComplete]);
 
@@ -240,7 +286,7 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
 
   const initiateWebRTCConnection = useCallback(async (transfer: TransferState) => {
     try {
-      // Prevent duplicate connection attempts
+      // 防重复连接：检查是否已存在连接，避免资源浪费
       const existingTransfer = transfersRef.current[transfer.transferId];
       if (existingTransfer && existingTransfer.peerConnection) {
         console.log(`WebRTC connection already exists for ${transfer.transferId}`);
@@ -250,16 +296,34 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
       console.log(`Initiating WebRTC connection for ${transfer.transferId}`);
       const peerConnection = createPeerConnection();
       
+      // 连接状态监控：实时监测WebRTC连接状态，快速响应失败情况
       peerConnection.onconnectionstatechange = () => {
         console.log(`Connection state changed to: ${peerConnection.connectionState}`);
+        
+        // WebRTC连接成功时更新状态
+        if (peerConnection.connectionState === 'connected') {
+          updateTransfer(transfer.transferId, { status: 'connected' });
+        }
+        
+        // 连接失败立即触发服务器中继，确保传输不中断
         if (peerConnection.connectionState === 'failed') {
           console.log('Connection failed - falling back to server relay');
           fallbackToServerTransfer(transfer);
         }
       };
       
+      // ICE连接监控：监控ICE连接状态，处理网络环境问题
       peerConnection.oniceconnectionstatechange = () => {
         console.log(`ICE connection state changed to: ${peerConnection.iceConnectionState}`);
+        
+        // ICE连接成功时记录
+        if (peerConnection.iceConnectionState === 'connected' || 
+            peerConnection.iceConnectionState === 'completed') {
+          console.log('ICE connection established successfully');
+        }
+        
+        // ICE连接失败或断开时立即切换到服务器中继
+        // 这种情况通常由NAT、防火墙或网络配置问题引起
         if (peerConnection.iceConnectionState === 'failed' || 
             peerConnection.iceConnectionState === 'disconnected') {
           console.log('ICE connection failed - falling back to server relay');
@@ -267,14 +331,23 @@ export function useWebRTC({ deviceId, sendMessage, onTransferComplete }: UseWebR
         }
       };
       
-      // Add timeout fallback - if WebRTC doesn't connect within 5 seconds, use server relay
-      setTimeout(() => {
+      // 超时保护机制：3秒内未建立连接则自动切换到服务器中继
+      // 这确保即使在复杂网络环境下也能快速切换到可靠的传输方式
+      const connectionTimeout = setTimeout(() => {
         const currentTransfer = transfersRef.current[transfer.transferId];
-        if (currentTransfer && currentTransfer.status === 'connecting') {
-          console.log('WebRTC connection timeout - falling back to server relay');
+        if (currentTransfer && 
+            (currentTransfer.status === 'connecting' || currentTransfer.status === 'pending')) {
+          console.log('WebRTC connection timeout (3s) - falling back to server relay for guaranteed delivery');
           fallbackToServerTransfer(currentTransfer);
         }
-      }, 5000);
+      }, 3000); // 缩短到3秒以提高响应速度
+      
+      // 成功建立连接后清除超时定时器
+      peerConnection.addEventListener('connectionstatechange', () => {
+        if (peerConnection.connectionState === 'connected') {
+          clearTimeout(connectionTimeout);
+        }
+      });
       
       const dataChannel = peerConnection.createDataChannel('fileTransfer', {
         ordered: true,

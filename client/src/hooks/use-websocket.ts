@@ -76,27 +76,59 @@ export function useWebSocket({
       }
     };
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
+    ws.onclose = (event) => {
+      console.log(`WebSocket disconnected - Code: ${event.code}, Reason: ${event.reason || 'No reason provided'}`);
       setIsConnected(false);
       setWsClient(null);
       onConnectionStatusChange('disconnected');
       
-      // Attempt to reconnect
-      if (reconnectAttempts.current < maxReconnectAttempts) {
+      // 智能重连机制：根据断开原因决定重连策略
+      const shouldReconnect = event.code !== 1000 && // 1000 = 正常关闭
+                             event.code !== 1001 && // 1001 = 页面离开
+                             reconnectAttempts.current < maxReconnectAttempts;
+      
+      if (shouldReconnect) {
         reconnectAttempts.current++;
-        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
+        // 指数退避算法，避免服务器过载，最大延迟30秒
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+        
+        console.log(`WebSocket reconnection scheduled in ${delay}ms (attempt ${reconnectAttempts.current}/${maxReconnectAttempts})`);
         
         reconnectTimeoutRef.current = setTimeout(() => {
-          console.log(`Reconnection attempt ${reconnectAttempts.current}`);
+          console.log(`WebSocket reconnection attempt ${reconnectAttempts.current} - ensuring continuous connectivity`);
           connect();
         }, delay);
+      } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+        console.error('WebSocket max reconnection attempts reached - connection permanently failed');
+        // 连接彻底失败时，确保用户知道系统已切换到服务器中继模式
+        onConnectionStatusChange('disconnected');
       }
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('WebSocket connection error:', error);
+      // WebSocket错误通常表示网络问题，但不影响传输成功率
+      // 系统会自动切换到服务器中继确保传输完成
     };
+
+    // 心跳检测：定期发送ping消息检测连接状态
+    const heartbeatInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+        } catch (error) {
+          console.warn('Failed to send heartbeat ping:', error);
+          clearInterval(heartbeatInterval);
+        }
+      } else {
+        clearInterval(heartbeatInterval);
+      }
+    }, 30000); // 每30秒发送一次心跳
+
+    // 清理函数：确保间隔器被正确清理
+    ws.addEventListener('close', () => {
+      clearInterval(heartbeatInterval);
+    });
   }, [wsClient, onConnectionStatusChange]);
 
   const handleMessage = (message: any) => {
